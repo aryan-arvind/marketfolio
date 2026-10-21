@@ -270,7 +270,7 @@ def plot_var_diagnostics_and_irf(
 
     fig, axes = plt.subplots(1, 2, figsize=(16, 6))
     fig.suptitle(
-        f"ATSA Unit 8 VAR({var_res.selected_lag}) Macro Linkages & Shock Transmission to NIFTY 50\n"
+        f"Global Macro Transmission & Impulse Response to NIFTY 50 | VAR({var_res.selected_lag})\n"
         f"Cholesky Identification Ordering: {var_res.cholesky_order}",
         fontsize=12,
         fontweight="bold",

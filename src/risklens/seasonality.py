@@ -187,7 +187,7 @@ def plot_seasonality_and_subseries(
     """
     fig, axes = plt.subplots(1, 3, figsize=(18, 5))
     fig.suptitle(
-        f"ATSA Unit 1 Seasonality & Calendar Effects: {asset_name}",
+        f"Calendar Return Patterns & Lag Structure: {asset_name}",
         fontsize=13,
         fontweight="bold",
     )
@@ -251,7 +251,7 @@ def plot_stl_components(
     """Plots the original log price/NAV, trend, seasonal, and residual components."""
     fig, axes = plt.subplots(4, 1, figsize=(14, 10), sharex=True)
     fig.suptitle(
-        f"ATSA Unit 1 STL Decomposition: {asset_name} Log Price/NAV\n"
+        f"Trend & Seasonal Price Decomposition: {asset_name}\n"
         f"Trend Strength F_T = {stl_res.trend_strength_f_t:.4f} | Seasonal Strength F_S = {stl_res.seasonal_strength_f_s:.4f}",
         fontsize=13,
         fontweight="bold",

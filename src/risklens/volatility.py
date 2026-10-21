@@ -380,7 +380,7 @@ def plot_volatility_forecast(
     ax.axhline(vol_res.rolling_mean_forecast_pct, color="darkorange", linestyle=":", label=f"21-Day Rolling Mean ({vol_res.rolling_mean_forecast_pct:.1f}%)")
 
     ax.set_title(
-        f"ATSA Unit 4, 5 & 8 Realized Volatility Forecast: {asset_name}\n"
+        f"Realized Volatility Forecast & Risk Cone: {asset_name}\n"
         f"Expected 30-Day Risk Range: [{vol_res.expected_risk_range_pct[0]:.1f}% - {vol_res.expected_risk_range_pct[1]:.1f}%] p.a.",
         fontsize=12,
         fontweight="bold",

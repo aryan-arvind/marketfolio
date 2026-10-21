@@ -106,6 +106,7 @@ def run_rolling_origin_evaluation(
     initial_window: int = EVAL_INITIAL_WINDOW,
     step_size: int = EVAL_STEP_SIZE,
     max_origins: int = EVAL_MAX_ORIGINS,
+    progress_callback: Any | None = None,
 ) -> BacktestResult:
     """
     Executes expanding-window rolling-origin evaluation on a time series.
@@ -159,7 +160,13 @@ def run_rolling_origin_evaluation(
 
     failed_origins = 0
 
-    for origin in origins:
+    for idx_orig, origin in enumerate(origins):
+        if progress_callback is not None:
+            try:
+                progress_callback(idx_orig + 1, len(origins))
+            except Exception:
+                pass
+
         train_idx = np.arange(0, origin)
         test_idx = np.arange(origin, origin + horizon)
 
@@ -179,7 +186,7 @@ def run_rolling_origin_evaluation(
                 warnings.simplefilter("ignore")
                 trend = "c" if model_order[1] == 0 else None
                 mod = ARIMA(y_train, order=model_order, trend=trend)
-                fit = mod.fit()
+                fit = mod.fit(method_kwargs={"maxiter": 40, "disp": False})
                 pred_path = fit.forecast(steps=horizon)
         except Exception as exc:
             logger.debug("Fit failed at origin %d: %s. Using naive fallback.", origin, exc)

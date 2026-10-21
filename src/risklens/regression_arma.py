@@ -250,7 +250,7 @@ def plot_market_regression(
 
     fig, axes = plt.subplots(1, 2, figsize=(15, 6))
     fig.suptitle(
-        f"ATSA Unit 2 & 5 Regression with ARMA Errors: {reg_res.asset_name} vs {reg_res.benchmark_name}\n"
+        f"Market Benchmark Sensitivity: {reg_res.asset_name} vs {reg_res.benchmark_name}\n"
         f"Beta = {reg_res.arma_beta:.3f} | Annual Alpha = {reg_res.arma_alpha_annualized*100:.2f}% (p={reg_res.arma_alpha_pvalue:.4f}) | R^2 = {reg_res.ols_r_squared:.3f}",
         fontsize=12,
         fontweight="bold",

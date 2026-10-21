@@ -93,11 +93,11 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     eval_res = results_data.get("evaluation", {})
 
     md = []
-    md.append(f"# RiskLens ATSA Quantitative Risk & Macro-Linkage Report")
+    md.append(f"# RiskLens Quantitative Risk & Macro-Linkage Report")
     md.append(f"## Target Asset: {name} ({symbol}){stale_tag}\n")
 
     # Data Freshness Header
-    md.append("### Data Freshness & Ingestion Metadata")
+    md.append("### Data Provenance & Freshness Metadata")
     md.append(f"- **Primary Data Source**: {source}")
     md.append(f"- **Last Available Market Date**: {last_date}")
     md.append(f"- **Cleaned Sample Size**: {n_obs} daily observations")
@@ -122,21 +122,21 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append(narrative_text)
     md.append("")
 
-    # ATSA Syllabus Mapping Table
-    md.append("## 2. ATSA Syllabus Alignment Matrix")
-    md.append("| ATSA Syllabus Unit | Quantitative Topic | Implementation Module | Empirical Finding |")
+    # Methodology Table
+    md.append("## 2. Methodology & Analytical Framework")
+    md.append("| Analytical Dimension | Quantitative Topic | Implementation Module | Empirical Finding |")
     md.append("|:---|:---|:---|:---|")
-    md.append(f"| **Unit 1: Stationarity & Decomposition** | Unit Root Tests & STL | `diagnostics.py`, `seasonality.py` | Log price: {stat.get('log_price_verdict', 'N/A')}; Returns: {stat.get('log_returns_verdict', 'N/A')} |")
-    md.append(f"| **Unit 1: Calendar Effects** | Subseries & Dummy OLS | `seasonality.py` | OLS F-test p={cal.get('ols_f_pvalue', 0.0):.4f} ({'Significant' if cal.get('day_of_week_significant', False) else 'No effect'}) |")
-    md.append(f"| **Unit 3 & 4: ARMA Identification** | AICc Grid Search & EMH | `arma_models.py` | Best: ARIMA{arma.get('best_order', '(0,0,0)')}; Predictable: {arma.get('is_predictable', False)} |")
-    md.append(f"| **Unit 2 & 5: Transfer / Reg with ARMA** | Single-Index Alpha & Beta | `regression_arma.py` | Beta={mkt.get('beta', 0.0):.3f}, Annual Alpha={mkt.get('alpha_annualized_pct', 0.0):+.2f}% (p={mkt.get('alpha_pvalue', 0.0):.4f}) |")
-    md.append(f"| **Unit 4, 5 & 8: Volatility & Bootstrap** | Realized Vol & Bootstrap (B=2000) | `volatility.py` | Current={vol.get('last_observed_vol_pct', 0.0):.1f}%, 30d Risk Range=[{vol.get('expected_risk_range_lower_pct', 0.0):.1f}%, {vol.get('expected_risk_range_upper_pct', 0.0):.1f}%] |")
-    md.append(f"| **Unit 8: Vector Autoregression** | Granger Causality, IRF & FEVD | `var_analysis.py` | VAR({var_res.get('selected_lag', 1)}) stable; Causal: {', '.join(var_res.get('granger_causal_factors', [])) or 'None'} |")
-    md.append(f"| **Unit 4 & 5: Forecast Evaluation** | Rolling-Origin MASE Backtesting | `evaluation.py` | MASE improvement vs Naive: {eval_res.get('model_mase_improvement_pct', 0.0):+.2f}% |")
+    md.append(f"| **Stationarity & Integration** | Unit Root Tests & STL | `diagnostics.py`, `seasonality.py` | Log price: {stat.get('log_price_verdict', 'N/A')}; Returns: {stat.get('log_returns_verdict', 'N/A')} |")
+    md.append(f"| **Calendar Effects** | Subseries & Dummy OLS | `seasonality.py` | OLS F-test p={cal.get('ols_f_pvalue', 0.0):.4f} ({'Significant' if cal.get('day_of_week_significant', False) else 'No effect'}) |")
+    md.append(f"| **ARMA Identification** | AICc Grid Search & EMH | `arma_models.py` | Best: ARIMA{arma.get('best_order', '(0,0,0)')}; Predictable: {arma.get('is_predictable', False)} |")
+    md.append(f"| **Benchmark Sensitivity** | Single-Index Alpha & Beta | `regression_arma.py` | Beta={mkt.get('beta', 0.0):.3f}, Annual Alpha={mkt.get('alpha_annualized_pct', 0.0):+.2f}% (p={mkt.get('alpha_pvalue', 0.0):.4f}) |")
+    md.append(f"| **Volatility & Bootstrap** | Realized Vol & Bootstrap (B=2000) | `volatility.py` | Current={vol.get('last_observed_vol_pct', 0.0):.1f}%, 30d Risk Range=[{vol.get('expected_risk_range_lower_pct', 0.0):.1f}%, {vol.get('expected_risk_range_upper_pct', 0.0):.1f}%] |")
+    md.append(f"| **Vector Autoregression** | Granger Causality, IRF & FEVD | `var_analysis.py` | VAR({var_res.get('selected_lag', 1)}) stable; Causal: {', '.join(var_res.get('granger_causal_factors', [])) or 'None'} |")
+    md.append(f"| **Forecast Evaluation** | Rolling-Origin MASE Backtesting | `evaluation.py` | MASE improvement vs Naive: {eval_res.get('model_mase_improvement_pct', 0.0):+.2f}% |")
     md.append("")
 
     # Module 1
-    md.append("## 3. Stationarity & Order of Integration (Units 1 & 5)")
+    md.append("## 3. Stationarity & Order of Integration")
     md.append("### Empirical Test Results")
     md.append("| Series Tested | ADF Statistic | ADF p-value | KPSS Statistic | KPSS p-value | Decision Verdict |")
     md.append("|:---|:---|:---|:---|:---|:---|")
@@ -147,7 +147,7 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("")
 
     # Module 2
-    md.append("## 4. Seasonality & Calendar Effects (Unit 1)")
+    md.append("## 4. Seasonality & Calendar Effects")
     md.append(f"- **Day-of-Week OLS Joint F-test**: Statistic = {cal.get('ols_f_stat', 0.0):.3f}, p-value = {cal.get('ols_f_pvalue', 0.0):.4f}")
     md.append(f"- **Kruskal-Wallis Non-Parametric Test**: Statistic = {cal.get('kruskal_stat', 0.0):.3f}, p-value = {cal.get('kruskal_pvalue', 0.0):.4f}")
     md.append(f"- **STL Trend Strength (F_T)**: {cal.get('trend_strength_f_t', 0.0):.4f}")
@@ -156,7 +156,7 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("")
 
     # Module 3
-    md.append("## 5. ARMA Conditional Mean Modeling & Predictability (Units 3, 4, 5)")
+    md.append("## 5. ARMA Conditional Mean Modeling & Predictability")
     md.append(f"- **Best Model Selected via AICc**: ARIMA{arma.get('best_order', '(0,0,0)')}")
     md.append(f"- **AICc**: {arma.get('best_aicc', 0.0):.2f} | **BIC**: {arma.get('best_bic', 0.0):.2f}")
     md.append(f"- **Constant-Drift Model AICc**: {arma.get('constant_aicc', 0.0):.2f} (Delta AICc = {arma.get('delta_aicc_vs_constant', 0.0):.2f})")
@@ -165,7 +165,7 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("")
 
     # Module 4
-    md.append("## 6. Realized Volatility & Residual Bootstrap Forecast (Units 4, 5, 8)")
+    md.append("## 6. Realized Volatility & Residual Bootstrap Forecast")
     md.append(f"- **Target Series**: Log Realized Volatility $v_t = \\ln(\\sqrt{{252}} \\cdot \\text{{std}}_{{21}}(r_t))$")
     md.append(f"- **Last Observed Annualized Volatility**: **{vol.get('last_observed_vol_pct', 0.0):.2f}%**")
     md.append(f"- **30-Day Point Forecast (Median)**: **{vol.get('point_forecast_pct', 0.0):.2f}%**")
@@ -175,7 +175,7 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("")
 
     # Module 5
-    md.append(f"## 7. Systematic Market Linkage: Asset vs {mkt.get('benchmark_name', '^NSEI')} (Units 2 & 5)")
+    md.append(f"## 7. Systematic Market Linkage: Asset vs {mkt.get('benchmark_name', '^NSEI')}")
     md.append(f"- **Common Dates Aligned**: {mkt.get('n_aligned_obs', 0)} sessions ({mkt.get('start_date', '')} to {mkt.get('end_date', '')})")
     md.append(f"- **Market Beta**: **{mkt.get('beta', 0.0):.3f}** (SE = {mkt.get('beta_se', 0.0):.3f}, 95% CI: [{mkt.get('beta_ci_lower', 0.0):.3f}, {mkt.get('beta_ci_upper', 0.0):.3f}])")
     md.append(f"- **Annualized Alpha**: **{mkt.get('alpha_annualized_pct', 0.0):+.2f}%** (p-value = {mkt.get('alpha_pvalue', 0.0):.4f})")
@@ -185,7 +185,7 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("")
 
     # Module 6
-    md.append("## 8. Global Macro Linkage & VAR Analysis (Unit 8)")
+    md.append("## 8. Global Macro Linkage & VAR Analysis")
     if var_res.get("available", False):
         md.append(f"- **System Specification**: 5 variables [S&P 500, Brent Crude, USD/INR, India VIX, NIFTY 50] across {var_res.get('aligned_obs', 0)} common trading dates.")
         md.append(f"- **Cholesky Identifying Assumption**: Shock ordering = `['SP500', 'Brent', 'USDINR', 'IndiaVIX', 'NIFTY50']`.")
@@ -200,7 +200,7 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("")
 
     # Module 7
-    md.append("## 9. Expanding-Window Out-of-Sample Evaluation (Units 4 & 5)")
+    md.append("## 9. Expanding-Window Out-of-Sample Forecasting Evaluation")
     md.append(f"- **Evaluation Protocol**: Expanding-window rolling origin (never shuffled, assert_no_leakage verified).")
     md.append(f"- **Origins Evaluated**: {eval_res.get('n_origins', 0)} origins (Step = 21 days, Horizon = 21 days).")
     md.append("| Model Candidate | MAE | RMSE | MASE | MASE Improvement vs Naive |")

@@ -175,7 +175,7 @@ def plot_acf_pacf_diagnostics(
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(
-        f"ATSA Unit 1 & 5 Diagnostic ACF/PACF Analysis: {asset_name}\n"
+        f"Return Autocorrelation & Volatility Clustering: {asset_name}\n"
         f"Sample size N={n} | 95% Bartlett confidence threshold = +/- {conf_band:.4f}",
         fontsize=13,
         fontweight="bold",

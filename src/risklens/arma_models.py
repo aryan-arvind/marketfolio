@@ -248,7 +248,7 @@ def plot_arma_residual_diagnostics(
 
     fig, axes = plt.subplots(2, 2, figsize=(14, 10))
     fig.suptitle(
-        f"ATSA Unit 5 Residual Diagnostics: {asset_name} ARIMA{model_summary.order}\n"
+        f"Model Residual Diagnostics: {asset_name} | ARIMA{model_summary.order}\n"
         f"Jarque-Bera p={model_summary.jb_pvalue:.4f} | Ljung-Box Lag10 p={model_summary.lb_df.iloc[0]['lb_pvalue']:.4f}",
         fontsize=13,
         fontweight="bold",

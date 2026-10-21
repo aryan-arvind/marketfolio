@@ -1,6 +1,6 @@
 """
-RiskLens: Interactive ATSA Time Series Risk and Macro-Linkage Dashboard.
-Built with Streamlit and cached quantitative analysis routines.
+RiskLens: Quantitative Risk & Macro-Linkage Terminal.
+Interactive institutional dashboard for Indian equities and mutual funds.
 Run via: streamlit run app/streamlit_app.py
 """
 
@@ -16,6 +16,12 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 SRC_DIR = BASE_DIR / "src"
 if str(SRC_DIR) not in sys.path:
     sys.path.insert(0, str(SRC_DIR))
+
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 
 import matplotlib.pyplot as plt
 import numpy as np
@@ -39,6 +45,7 @@ from risklens.diagnostics import (
 from risklens.evaluation import run_rolling_origin_evaluation
 from risklens.narrator import generate_narrative
 from risklens.regression_arma import fit_regression_arma, plot_market_regression
+from risklens.report import build_markdown_report
 from risklens.seasonality import (
     analyze_calendar_effects,
     plot_seasonality_and_subseries,
@@ -49,38 +56,81 @@ from risklens.var_analysis import plot_var_diagnostics_and_irf, run_var_analysis
 from risklens.volatility import forecast_volatility, plot_volatility_forecast
 
 st.set_page_config(
-    page_title="RiskLens | ATSA Quantitative Monitor",
-    page_icon="📈",
+    page_title="RiskLens | Quantitative Risk & Macro Monitor",
     layout="wide",
     initial_sidebar_state="expanded",
 )
 
-# Custom Styling
+# Professional Institutional Dark/Slate Theme (No neon, no playful styling)
 st.markdown(
     """
     <style>
-    .main-header {
-        font-size: 2.2rem;
+    .reportview-container, .main, header {
+        background-color: #0b0f19;
+    }
+    .main-title {
+        font-size: 1.85rem;
         font-weight: 700;
-        color: #1e3a8a;
+        color: #f1f5f9;
+        letter-spacing: -0.02em;
         margin-bottom: 0.2rem;
     }
-    .sub-header {
-        font-size: 1.05rem;
-        color: #475569;
-        margin-bottom: 1.5rem;
-    }
-    .freshness-card {
-        background-color: #f8fafc;
-        border-left: 5px solid #2563eb;
-        padding: 0.8rem 1.2rem;
-        border-radius: 4px;
-        margin-bottom: 1.5rem;
+    .sub-title {
         font-size: 0.95rem;
+        color: #94a3b8;
+        margin-bottom: 1.2rem;
     }
-    .metric-badge {
+    .metric-card {
+        background-color: #151d2f;
+        border: 1px solid #23314a;
+        border-radius: 4px;
+        padding: 0.85rem 1rem;
+        margin-bottom: 0.6rem;
+    }
+    .metric-title {
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #94a3b8;
+        margin-bottom: 0.25rem;
+    }
+    .metric-val {
+        font-size: 1.4rem;
+        font-weight: 700;
+        color: #f8fafc;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, monospace;
+    }
+    .metric-sub {
+        font-size: 0.78rem;
+        color: #64748b;
+        margin-top: 0.2rem;
+    }
+    .provenance-card {
+        background-color: #121827;
+        border-left: 3px solid #3b82f6;
+        border-top: 1px solid #1e293b;
+        border-right: 1px solid #1e293b;
+        border-bottom: 1px solid #1e293b;
+        padding: 0.65rem 1rem;
+        border-radius: 3px;
+        margin-bottom: 1.2rem;
+        font-size: 0.85rem;
+        color: #cbd5e1;
+    }
+    .stTabs [data-baseweb="tab-list"] {
+        gap: 8px;
+        border-bottom: 1px solid #23314a;
+    }
+    .stTabs [data-baseweb="tab"] {
+        padding: 8px 16px;
+        font-size: 0.88rem;
+        color: #94a3b8;
+        border-radius: 4px 4px 0px 0px;
+    }
+    .stTabs [aria-selected="true"] {
+        color: #f8fafc !important;
+        border-bottom: 2px solid #3b82f6 !important;
         font-weight: 600;
-        color: #1e293b;
     }
     </style>
     """,
@@ -89,16 +139,17 @@ st.markdown(
 
 
 @st.cache_data(ttl=21600, show_spinner=False)
-def execute_analysis(
+def execute_analysis_cached(
     asset_mode: str,
     asset_input: str,
     benchmark_symbol: str,
     horizon: int,
     force_refresh: bool,
+    max_origins: int = 12,
 ) -> dict[str, Any]:
     """
-    Cached analysis runner with 6-hour TTL (21600 seconds).
-    Pulls live data, cleans, and runs all statistical modeling.
+    Cached quantitative analysis runner with 6-hour TTL.
+    Executes data retrieval, cleaning, statistical modeling, and backtesting.
     """
     warnings_list: list[str] = []
 
@@ -109,8 +160,8 @@ def execute_analysis(
         symbol_code = str(scheme_code)
         if "dividend" in scheme_name.lower() or "idcw" in scheme_name.lower():
             warnings_list.append(
-                f"Selected fund '{scheme_name}' appears to be a Dividend/IDCW plan. "
-                "Dividend payouts distort NAV returns. Growth plans are advised."
+                f"Selected fund '{scheme_name}' is a Dividend/IDCW plan. "
+                "Dividend payouts distort NAV returns; Growth plans provide clean return series."
             )
     else:
         raw_price, meta = fetch_yfinance_ticker(asset_input, force_refresh=force_refresh, is_primary=True)
@@ -118,29 +169,29 @@ def execute_analysis(
         symbol_code = asset_input
 
     if meta.get("is_stale"):
-        warnings_list.append(f"Network interruption encountered: Stale cache as of {meta.get('last_date')} used.")
+        warnings_list.append(f"Network interruption: Using cached data as of {meta.get('last_date')}.")
 
-    # Cleaning
+    # 1. Clean primary series
     clean_res = clean_primary_asset(raw_price, asset_name=display_name)
     prices = clean_res.price_series
     returns = clean_res.log_return_series
 
-    # Diagnostics
+    # 2. Stationarity & Autocorrelation
     stat_suite = run_stationarity_suite(prices, returns, display_name)
     lb_returns = compute_ljung_box(returns, lags=[10, 20])
     lb_sq_returns = compute_ljung_box(returns ** 2, lags=[10, 20])
 
-    # Seasonality
+    # 3. Calendar Tendencies & Decomposition
     cal_res = analyze_calendar_effects(returns, display_name)
     stl_res = run_stl_decomposition(prices, display_name, period=21)
 
-    # ARMA
+    # 4. Conditional Mean ARMA
     arma_search = grid_search_arma(returns, display_name, d=0, max_p=3, max_q=3)
 
-    # Volatility
+    # 5. Volatility Modeling & Bootstrap Forecast
     vol_res = forecast_volatility(returns, display_name, horizon=horizon)
 
-    # Benchmark Regression
+    # 6. Benchmark Sensitivity Regression
     bench_clean = None
     market_res = None
     try:
@@ -148,9 +199,9 @@ def execute_analysis(
         bench_clean = clean_primary_asset(bench_raw, asset_name=benchmark_symbol, min_observations=250)
         market_res = fit_regression_arma(returns, bench_clean.log_return_series, asset_name=display_name, benchmark_name=benchmark_symbol)
     except Exception as exc:
-        warnings_list.append(f"Market regression against {benchmark_symbol} skipped: {exc}")
+        warnings_list.append(f"Benchmark regression vs {benchmark_symbol} skipped: {exc}")
 
-    # VAR
+    # 7. Global Macro VAR System
     macro_dict, _ = fetch_all_macro_series(force_refresh=force_refresh)
     aligned_macro, macro_valid, macro_reason = align_macro_series(macro_dict)
     var_res = None
@@ -159,15 +210,21 @@ def execute_analysis(
         if v_ok:
             var_res = v_res
 
-    # Evaluation
+    # 8. Out-of-Sample Rolling-Origin Backtesting
     eval_res = run_rolling_origin_evaluation(
         series=vol_res.log_vol_series,
         target_name=f"{display_name} Volatility",
         model_order=vol_res.best_order,
         horizon=horizon,
+        max_origins=max_origins,
     )
 
-    # Narrative
+    # 9. Assembled Results Structure
+    first_lb_p = (
+        float(arma_search.best_model.lb_df.iloc[0]["lb_pvalue"])
+        if len(arma_search.best_model.lb_df) > 0
+        else 0.0
+    )
     assembled_results = {
         "asset_metadata": {
             "name": display_name,
@@ -185,33 +242,61 @@ def execute_analysis(
             "log_returns_verdict": stat_suite["log_returns"].verdict,
             "returns_adf_pvalue": stat_suite["log_returns"].adf_pvalue,
             "returns_kpss_pvalue": stat_suite["log_returns"].kpss_pvalue,
+            "price_adf_stat": stat_suite["log_price"].adf_stat,
+            "price_adf_pvalue": stat_suite["log_price"].adf_pvalue,
+            "price_kpss_stat": stat_suite["log_price"].kpss_stat,
+            "price_kpss_pvalue": stat_suite["log_price"].kpss_pvalue,
+            "returns_adf_stat": stat_suite["log_returns"].adf_stat,
+            "returns_kpss_stat": stat_suite["log_returns"].kpss_stat,
+            "lb_returns_pvalue_lag10": float(lb_returns.loc[10, "lb_pvalue"]),
+            "lb_sq_returns_pvalue_lag10": float(lb_sq_returns.loc[10, "lb_pvalue"]),
         },
         "seasonality": {
-            "day_of_week_significant": cal_res.is_day_of_week_significant,
+            "day_of_week_significant": cal_res.is_dow_significant,
+            "ols_f_stat": cal_res.ols_f_stat,
             "ols_f_pvalue": cal_res.ols_f_pvalue,
+            "kruskal_stat": cal_res.kruskal_stat,
+            "kruskal_pvalue": cal_res.kruskal_pvalue,
             "trend_strength_f_t": stl_res.trend_strength_f_t,
             "seasonal_strength_f_s": stl_res.seasonal_strength_f_s,
+            "summary_verdict": cal_res.summary_verdict,
         },
         "arma_predictability": {
-            "best_order": f"({arma_search.best_model.order[0]},{arma_search.best_model.order[1]},{arma_search.best_model.order[2]})",
+            "best_order": str(arma_search.best_order),
+            "best_aicc": arma_search.best_model.aicc,
+            "best_bic": arma_search.best_model.bic,
+            "constant_aicc": arma_search.constant_model.aicc,
             "delta_aicc_vs_constant": arma_search.best_model.aicc - arma_search.constant_model.aicc,
             "is_predictable": arma_search.is_predictable,
+            "residual_lb_pvalue": first_lb_p,
+            "residual_jb_pvalue": arma_search.best_model.jb_pvalue,
+            "verdict": arma_search.predictability_verdict,
         },
         "volatility_forecast": {
             "last_observed_vol_pct": vol_res.last_observed_vol_pct,
             "point_forecast_pct": vol_res.point_forecast_pct,
             "expected_risk_range_lower_pct": vol_res.expected_risk_range_pct[0],
             "expected_risk_range_upper_pct": vol_res.expected_risk_range_pct[1],
+            "naive_forecast_pct": vol_res.naive_forecast_pct,
+            "rolling_mean_forecast_pct": vol_res.rolling_mean_forecast_pct,
             "bootstrap_fallback_used": vol_res.boot_failed_or_fallback,
         },
         "market_model": (
             {
                 "benchmark_name": market_res.benchmark_name,
+                "n_aligned_obs": market_res.n_aligned_obs,
+                "start_date": market_res.start_date,
+                "end_date": market_res.end_date,
                 "beta": market_res.arma_beta,
                 "beta_se": market_res.arma_beta_se,
+                "beta_ci_lower": market_res.arma_beta_ci[0],
+                "beta_ci_upper": market_res.arma_beta_ci[1],
                 "alpha_annualized_pct": market_res.arma_alpha_annualized * 100.0,
                 "alpha_pvalue": market_res.arma_alpha_pvalue,
                 "r_squared": market_res.ols_r_squared,
+                "durbin_watson": market_res.ols_dw_stat,
+                "ols_lb_pvalue": market_res.ols_residual_lb_pvalue,
+                "interpretation": market_res.interpretation,
             }
             if market_res
             else {}
@@ -219,13 +304,33 @@ def execute_analysis(
         "var_macro": (
             {
                 "available": True,
+                "aligned_obs": var_res.aligned_obs,
                 "selected_lag": var_res.selected_lag,
+                "cholesky_order": var_res.cholesky_order,
                 "granger_causal_factors": [g.causing_variable for g in var_res.granger_tests if g.is_causal_05],
+                "granger_details": [
+                    {
+                        "var": g.causing_variable,
+                        "f_stat": g.f_statistic,
+                        "p_val": g.p_value,
+                        "conclusion": g.conclusion,
+                    }
+                    for g in var_res.granger_tests
+                ],
                 "var_beats_baseline": var_res.var_beats_baseline,
+                "oos_verdict": var_res.out_of_sample_verdict,
             }
             if var_res
-            else {"available": False}
+            else {"available": False, "reason": macro_reason}
         ),
+        "evaluation": {
+            "n_origins": eval_res.n_origins_evaluated,
+            "horizon": eval_res.horizon,
+            "model_mase_improvement_pct": eval_res.model_mase_improvement_pct,
+            "table_rows": eval_res.metrics_table.to_dict(orient="records"),
+            "verdict": eval_res.summary_verdict,
+        },
+        "flagged_anomalies": clean_res.flagged_anomalies.to_dict(orient="records"),
     }
 
     narrative = generate_narrative(assembled_results, use_llm=False)
@@ -255,75 +360,105 @@ def execute_analysis(
 # ==============================
 # UI Sidebar Configuration
 # ==============================
-st.sidebar.title("🛡️ RiskLens Settings")
-asset_mode = st.sidebar.radio("Asset Selection Mode", ["Indian Mutual Fund", "Stock / Index (Yahoo Finance)"])
+st.sidebar.markdown("### RiskLens Parameters")
+asset_mode = st.sidebar.radio(
+    "Asset Selection",
+    ["Indian Stock / Index", "Indian Mutual Fund"],
+    index=0,
+)
 
-if asset_mode == "Indian Mutual Fund":
+if asset_mode == "Indian Stock / Index":
     asset_input = st.sidebar.text_input(
-        "AMFI Scheme Query",
-        value="Nifty 50 Index Fund Direct Growth",
-        help="Search query to resolve fund from official AMFI database (e.g. 'Parag Parikh Flexi Cap Direct Growth')",
+        "Yahoo Finance Symbol",
+        value="RELIANCE.NS",
+        help="NSE equity or index symbol with .NS suffix (e.g. RELIANCE.NS, TCS.NS, HDFCBANK.NS, ^NSEI)",
     )
 else:
     asset_input = st.sidebar.text_input(
-        "Yahoo Finance Ticker",
-        value="RELIANCE.NS",
-        help="NSE equity or index symbol with .NS suffix (e.g. 'RELIANCE.NS', 'HDFCBANK.NS', '^NSEI')",
+        "AMFI Fund Query",
+        value="Nifty 50 Index Fund Direct Growth",
+        help="Search keyword to resolve mutual fund from AMFI database (e.g. Parag Parikh Flexi Cap Direct Growth)",
     )
 
 benchmark_symbol = st.sidebar.text_input(
-    "Market Benchmark Symbol",
+    "Market Benchmark",
     value=DEFAULT_BENCHMARK_SYMBOL,
     help="Default benchmark is NIFTY 50 (^NSEI)",
 )
 
-horizon = st.sidebar.slider("Volatility Forecast Horizon (Trading Days)", min_value=5, max_value=60, value=21)
-force_refresh = st.sidebar.checkbox("Bypass Local 6-Hour Cache (--refresh)", value=False)
-run_btn = st.sidebar.button("🚀 Run ATSA Analysis", type="primary", use_container_width=True)
+horizon = st.sidebar.slider(
+    "Volatility Forecast Horizon (Days)",
+    min_value=5,
+    max_value=60,
+    value=DEFAULT_FORECAST_HORIZON,
+)
+
+max_origins = st.sidebar.select_slider(
+    "Backtest Evaluation Depth",
+    options=[6, 12, 18, 24, 36],
+    value=12,
+    help="Number of expanding-window rolling origins. 12 origins runs in ~10 seconds; 36 origins performs deep historical backtesting.",
+)
+
+force_refresh = st.sidebar.checkbox("Bypass Local 6h Cache", value=False)
+run_btn = st.sidebar.button("Run Quantitative Analysis", type="primary", use_container_width=True)
 
 st.sidebar.markdown("---")
 st.sidebar.markdown(
     """
-    **Applied Time Series Analysis (ATSA)**  
-    University Project Specification:
-    - Real public data only
-    - Units 1, 2, 3, 4, 5 & 8
-    - Residual bootstrap ($B=2000$)
-    - Vector Autoregression & Cholesky IRF
-    """
+    <div style="font-size:0.78rem; color:#64748b; line-height:1.4;">
+    <b>Quantitative Architecture</b><br>
+    - Stationarity & Order of Integration<br>
+    - Return Autocorrelation & Volatility Clustering<br>
+    - Day/Month Calendar Tendencies & STL<br>
+    - Realized Volatility Bootstrap Cone (B=2000)<br>
+    - Single-Index Market Beta & Alpha<br>
+    - 5-Variable Macro Vector Autoregression<br>
+    - Expanding-Window Out-of-Sample Backtesting
+    </div>
+    """,
+    unsafe_allow_html=True,
 )
 
-# Header
-st.markdown('<div class="main-header">RiskLens: ATSA Risk & Macro-Linkage Monitor</div>', unsafe_allow_html=True)
+# Main Terminal Header
+st.markdown('<div class="main-title">RiskLens: Quantitative Risk & Macro Monitor</div>', unsafe_allow_html=True)
 st.markdown(
-    '<div class="sub-header">Production-grade econometric diagnostics, ARMA conditional mean identification, '
-    'realized volatility forecasting, and global macro vector autoregression for Indian financial assets.</div>',
+    '<div class="sub-title">Real-time risk assessment, volatility forecasting, and macro linkage analysis for Indian financial markets.</div>',
     unsafe_allow_html=True,
 )
 
 if run_btn or "analysis_data" in st.session_state:
     if run_btn:
-        with st.spinner("Executing rigorous ATSA econometric pipeline on live real data..."):
+        with st.status(f"Processing {asset_input}...", expanded=True) as status_box:
+            status_box.write("Ingesting historical price series and cleaning data...")
             try:
-                data = execute_analysis(asset_mode, asset_input, benchmark_symbol, horizon, force_refresh)
+                data = execute_analysis_cached(
+                    asset_mode=asset_mode,
+                    asset_input=asset_input,
+                    benchmark_symbol=benchmark_symbol,
+                    horizon=horizon,
+                    force_refresh=force_refresh,
+                    max_origins=max_origins,
+                )
                 st.session_state["analysis_data"] = data
+                status_box.update(label=f"Analysis complete for {asset_input}", state="complete", expanded=False)
             except Exception as e:
-                st.error(f"Analysis halted with error: {e}")
+                status_box.update(label=f"Analysis failed: {e}", state="error", expanded=True)
+                st.error(f"Error during execution: {e}")
                 st.stop()
 
     data = st.session_state["analysis_data"]
-
-    # Data Freshness Stamp
     meta = data["meta"]
+
+    # Data Provenance Banner
     st.markdown(
         f"""
-        <div class="freshness-card">
-            <b>Target Asset:</b> <span class="metric-badge">{data['display_name']} ({data['symbol_code']})</span> &nbsp;|&nbsp; 
-            <b>Data Source:</b> {meta.get('source', 'Public API')} &nbsp;|&nbsp; 
-            <b>Latest Available Date:</b> <span class="metric-badge">{meta.get('last_date')}</span> &nbsp;|&nbsp; 
-            <b>Observations:</b> {len(data['clean_res'].log_return_series)} sessions &nbsp;|&nbsp; 
-            <b>Fetch Timestamp:</b> {meta.get('fetch_timestamp')} &nbsp;|&nbsp;
-            <b>Status:</b> {'⚠️ STALE CACHE' if meta.get('is_stale') else '🟢 LIVE FRESH (TTL < 6h)'}
+        <div class="provenance-card">
+            <b>Target Asset:</b> {data['display_name']} ({data['symbol_code']}) &nbsp;&nbsp;|&nbsp;&nbsp;
+            <b>Source:</b> {meta.get('source', 'Public API')} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <b>Last Date:</b> {meta.get('last_date')} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <b>Cleaned Observations:</b> {len(data['clean_res'].log_return_series)} &nbsp;&nbsp;|&nbsp;&nbsp;
+            <b>Status:</b> {'Stale Cache (Offline Fallback)' if meta.get('is_stale') else 'Live Verified'}
         </div>
         """,
         unsafe_allow_html=True,
@@ -333,176 +468,276 @@ if run_btn or "analysis_data" in st.session_state:
         for w in data["warnings"]:
             st.warning(w)
 
-    # Tabs
-    tab1, tab2, tab3, tab4, tab5, tab6, tab7, tab8, tab9 = st.tabs(
+    # 6 Institutional Financial Tabs
+    tab1, tab2, tab3, tab4, tab5, tab6 = st.tabs(
         [
-            "📋 Overview",
-            "🔬 Stationarity & ACF",
-            "📅 Seasonality",
-            "📐 ARMA & EMH",
-            "⚡ Volatility Forecast",
-            "🎯 Benchmark Linkage",
-            "🌐 Macro VAR",
-            "📊 Out-of-Sample",
-            "📑 Full Report",
+            "Overview & Risk Summary",
+            "Return Dynamics & Seasonality",
+            "Volatility & Risk Forecast",
+            "Market & Macro Drivers",
+            "Model Diagnostics & Backtest",
+            "Audit Report & Export",
         ]
     )
 
-    # 1. Overview Tab
+    # ==========================================
+    # TAB 1: Executive Overview & Key Metrics
+    # ==========================================
     with tab1:
-        st.subheader("Executive ATSA Summary")
-        st.markdown(data["narrative"])
-
-        col1, col2, col3, col4 = st.columns(4)
+        st.subheader("Key Quantitative Metrics")
         vol_info = data["vol_res"]
-        col1.metric("Last Realized Vol", f"{vol_info.last_observed_vol_pct:.2f}% p.a.")
-        col2.metric("30-Day Risk Forecast", f"{vol_info.point_forecast_pct:.2f}% p.a.")
-        col3.metric("90% Risk Range", f"[{vol_info.expected_risk_range_pct[0]:.1f}% - {vol_info.expected_risk_range_pct[1]:.1f}%]")
         mkt_info = data["market_res"]
-        if mkt_info:
-            col4.metric(f"Beta vs {mkt_info.benchmark_name}", f"{mkt_info.arma_beta:.3f}")
+        stat_info = data["stat_suite"]["log_returns"]
+        latest_price = float(data["clean_res"].price_series.iloc[-1])
 
-        if not data["clean_res"].flagged_anomalies.empty:
-            st.markdown("#### Flagged Outlier Return Dates (|r_t| > 15%)")
-            st.dataframe(data["clean_res"].flagged_anomalies, use_container_width=True)
-
-    # 2. Stationarity Tab
-    with tab2:
-        st.subheader("Unit Root & Stationarity Diagnostics (ATSA Units 1 & 5)")
-        s_price = data["stat_suite"]["log_price"]
-        s_ret = data["stat_suite"]["log_returns"]
-
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown("##### Log Price / NAV")
-            st.write(f"- **ADF Statistic:** {s_price.adf_stat:.4f} (p-value: {s_price.adf_pvalue:.4f})")
-            st.write(f"- **KPSS Statistic:** {s_price.kpss_stat:.4f} (p-value: {s_price.kpss_pvalue:.4f})")
-            st.info(f"**Verdict:** {s_price.verdict}")
-        with col2:
-            st.markdown("##### Log Returns r_t")
-            st.write(f"- **ADF Statistic:** {s_ret.adf_stat:.4f} (p-value: {s_ret.adf_pvalue:.4f})")
-            st.write(f"- **KPSS Statistic:** {s_ret.kpss_stat:.4f} (p-value: {s_ret.kpss_pvalue:.4f})")
-            st.success(f"**Verdict:** {s_ret.verdict}")
+        c1, c2, c3, c4, c5 = st.columns(5)
+        with c1:
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-title">Latest Close</div>
+                    <div class="metric-val">{latest_price:,.2f}</div>
+                    <div class="metric-sub">Date: {meta.get('last_date')}</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c2:
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-title">Realized Vol (21d)</div>
+                    <div class="metric-val">{vol_info.last_observed_vol_pct:.1f}%</div>
+                    <div class="metric-sub">Annualized</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c3:
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-title">30d Vol Forecast</div>
+                    <div class="metric-val">{vol_info.point_forecast_pct:.1f}%</div>
+                    <div class="metric-sub">Median Expected</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c4:
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-title">30d Risk Envelope</div>
+                    <div class="metric-val">[{vol_info.expected_risk_range_pct[0]:.0f}% - {vol_info.expected_risk_range_pct[1]:.0f}%]</div>
+                    <div class="metric-sub">90% Confidence Band</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
+        with c5:
+            beta_str = f"{mkt_info.arma_beta:.2f}" if mkt_info else "N/A"
+            alpha_str = f"{mkt_info.arma_alpha_annualized*100:+.2f}%" if mkt_info else "N/A"
+            st.markdown(
+                f"""
+                <div class="metric-card">
+                    <div class="metric-title">Market Beta / Alpha</div>
+                    <div class="metric-val">{beta_str}</div>
+                    <div class="metric-sub">Alpha: {alpha_str} p.a.</div>
+                </div>
+                """,
+                unsafe_allow_html=True,
+            )
 
         st.markdown("---")
+        st.subheader("Quantitative Risk & Market Takeaways")
+        st.markdown(data["narrative"])
+
+        if not data["clean_res"].flagged_anomalies.empty:
+            st.markdown("#### Extreme Return Events (|Daily Return| > 15%)")
+            st.dataframe(data["clean_res"].flagged_anomalies, use_container_width=True)
+
+    # ==========================================
+    # TAB 2: Return Dynamics & Seasonality
+    # ==========================================
+    with tab2:
         st.subheader("Autocorrelation & Volatility Clustering")
+        st.markdown(
+            "Autocorrelation of raw log returns evaluates directional serial dependency, "
+            "while squared log returns capture volatility clustering (ARCH effects)."
+        )
         fig_acf = plot_acf_pacf_diagnostics(data["clean_res"].log_return_series, data["display_name"])
         st.pyplot(fig_acf)
         plt.close(fig_acf)
 
-    # 3. Seasonality Tab
-    with tab3:
-        st.subheader("Seasonality, Calendar Anomalies & STL Decomposition (ATSA Unit 1)")
-        cal = data["cal_res"]
-        stl = data["stl_res"]
-
-        st.write(f"- **Day-of-Week OLS Joint F-test:** Statistic={cal.ols_f_stat:.3f}, p-value={cal.ols_f_pvalue:.4f}")
-        st.write(f"- **Kruskal-Wallis Non-Parametric Test:** Statistic={cal.kruskal_stat:.3f}, p-value={cal.kruskal_pvalue:.4f}")
-        st.write(f"- **STL Trend Strength (F_T):** {stl.trend_strength_f_t:.4f} | **Seasonal Strength (F_S):** {stl.seasonal_strength_f_s:.4f}")
-        st.info(f"**Calendar Verdict:** {cal.summary_verdict}")
-
-        fig_seas = plot_seasonality_and_subseries(data["clean_res"].log_return_series, cal, data["display_name"])
+        st.markdown("---")
+        st.subheader("Calendar Return Patterns & Lag Structure")
+        st.markdown(
+            f"Evaluates systematic return variation across days of the week and months of the year. "
+            f"**Joint OLS F-test p-value: {data['cal_res'].ols_f_pvalue:.4f}** | "
+            f"**Kruskal-Wallis p-value: {data['cal_res'].kruskal_pvalue:.4f}**"
+        )
+        fig_seas = plot_seasonality_and_subseries(data["clean_res"].log_return_series, data["cal_res"], data["display_name"])
         st.pyplot(fig_seas)
         plt.close(fig_seas)
 
-        fig_stl = plot_stl_components(stl, data["display_name"])
+        st.markdown("---")
+        st.subheader("Price Decomposition: Trend vs Seasonality")
+        st.markdown(
+            f"Robust STL decomposition separating macro trend from seasonal cycles. "
+            f"**Trend Strength (F_T): {data['stl_res'].trend_strength_f_t:.3f}** | "
+            f"**Seasonal Strength (F_S): {data['stl_res'].seasonal_strength_f_s:.3f}**"
+        )
+        fig_stl = plot_stl_components(data["stl_res"], data["display_name"])
         st.pyplot(fig_stl)
         plt.close(fig_stl)
 
-    # 4. ARMA & EMH Tab
-    with tab4:
-        st.subheader("Conditional Mean ARMA Modeling & EMH Predictability (ATSA Units 3, 4 & 5)")
-        arma = data["arma_search"]
-        best = arma.best_model
-        st.write(f"- **Best Model Selected by AICc:** ARIMA{arma.best_order}")
-        st.write(f"- **AICc:** {best.aicc:.2f} | **BIC:** {best.bic:.2f} | **Delta AICc vs Constant Mean:** {best.aicc - arma.constant_model.aicc:.2f}")
-        st.write(f"- **Residual Diagnostics:** Ljung-Box (Lag 10) p={best.lb_df.iloc[0]['lb_pvalue']:.4f}, Jarque-Bera p={best.jb_pvalue:.4f}")
-
-        if arma.is_predictable:
-            st.warning(f"**Verdict:** {arma.predictability_verdict}")
-        else:
-            st.success(f"**Verdict:** {arma.predictability_verdict}")
-
-        fig_resid = plot_arma_residual_diagnostics(best, data["display_name"])
-        st.pyplot(fig_resid)
-        plt.close(fig_resid)
-
-        st.markdown("#### Candidate Model Grid Search Comparison")
-        st.dataframe(arma.all_models_df, use_container_width=True)
-
-    # 5. Volatility Forecast Tab
-    with tab5:
-        st.subheader("Realized Volatility Modeling & Residual Bootstrap (ATSA Units 4, 5 & 8)")
-        vol = data["vol_res"]
-        st.write(
-            f"Target: $v_t = \\ln(\\sqrt{{252}} \\cdot \\text{{std}}_{{21}}(r_t))$. "
-            f"Fitted ARIMA{vol.best_order} on realized volatility."
+    # ==========================================
+    # TAB 3: Volatility & Risk Forecast
+    # ==========================================
+    with tab3:
+        st.subheader("30-Day Realized Volatility Forecast & Risk Cone")
+        st.markdown(
+            "Forecasts natural log realized volatility using an autoregressive integrated moving average model, "
+            "supplemented with 2,000 recursive residual bootstrap simulations to construct empirical 90% confidence bands."
         )
-        st.write(f"- **Point Forecast (Median):** {vol.point_forecast_pct:.2f}% p.a.")
-        st.write(f"- **90% Expected Risk Range:** [{vol.expected_risk_range_pct[0]:.2f}% - {vol.expected_risk_range_pct[1]:.2f}%] p.a.")
-        st.write(f"- **Baselines:** Naive={vol.naive_forecast_pct:.2f}%, 21-Day Rolling Mean={vol.rolling_mean_forecast_pct:.2f}%")
-
-        fig_vol = plot_volatility_forecast(vol, data["display_name"])
+        fig_vol = plot_volatility_forecast(data["vol_res"], data["display_name"])
         st.pyplot(fig_vol)
         plt.close(fig_vol)
 
-    # 6. Benchmark Linkage Tab
-    with tab6:
-        st.subheader(f"Systematic Benchmark Linkage: Regression with ARMA Errors (ATSA Units 2 & 5)")
+        st.markdown("#### Volatility Forecast Summary Table")
+        vol_df = pd.DataFrame(
+            [
+                {
+                    "Metric": "Current Realized Volatility (21-Day Rolling)",
+                    "Annualized Value": f"{data['vol_res'].last_observed_vol_pct:.2f}% p.a.",
+                    "Context": "Historical benchmark from most recent session",
+                },
+                {
+                    "Metric": "ARIMA Model Point Forecast (Median)",
+                    "Annualized Value": f"{data['vol_res'].point_forecast_pct:.2f}% p.a.",
+                    "Context": f"Optimal ARIMA{data['vol_res'].best_order} specification",
+                },
+                {
+                    "Metric": "Expected 30-Day Risk Range (90% Interval)",
+                    "Annualized Value": f"[{data['vol_res'].expected_risk_range_pct[0]:.2f}% - {data['vol_res'].expected_risk_range_pct[1]:.2f}%] p.a.",
+                    "Context": "5th to 95th percentile bounds from 2,000 bootstrap paths",
+                },
+                {
+                    "Metric": "Naive Baseline Forecast",
+                    "Annualized Value": f"{data['vol_res'].naive_forecast_pct:.2f}% p.a.",
+                    "Context": "Assumes zero volatility change (random walk heuristic)",
+                },
+                {
+                    "Metric": "21-Day Rolling Mean Baseline",
+                    "Annualized Value": f"{data['vol_res'].rolling_mean_forecast_pct:.2f}% p.a.",
+                    "Context": "Historical moving average baseline",
+                },
+            ]
+        )
+        st.table(vol_df)
+
+    # ==========================================
+    # TAB 4: Market & Macro Drivers
+    # ==========================================
+    with tab4:
+        st.subheader("Systematic Market Sensitivity (Beta & Alpha)")
         mkt = data["market_res"]
         if mkt:
-            col1, col2, col3 = st.columns(3)
-            col1.metric("Beta", f"{mkt.arma_beta:.3f}", f"SE: {mkt.arma_beta_se:.3f}")
-            col2.metric("Annualized Alpha", f"{mkt.arma_alpha_annualized*100:+.2f}%", f"p-val: {mkt.arma_alpha_pvalue:.4f}")
-            col3.metric("R-Squared (OLS)", f"{mkt.ols_r_squared:.3f}", f"DW: {mkt.ols_dw_stat:.2f}")
+            col1, col2, col3, col4 = st.columns(4)
+            col1.metric("Market Beta", f"{mkt.arma_beta:.3f}", f"SE: {mkt.arma_beta_se:.3f}")
+            col2.metric("Annualized Alpha", f"{mkt.arma_alpha_annualized*100:+.2f}%", f"p={mkt.arma_alpha_pvalue:.4f}")
+            col3.metric("R-Squared", f"{mkt.ols_r_squared:.3f}")
+            col4.metric("Durbin-Watson Stat", f"{mkt.ols_dw_stat:.2f}")
 
-            st.info(mkt.interpretation)
+            st.markdown(f"**Empirical Finding**: {mkt.interpretation}")
 
             fig_mkt = plot_market_regression(mkt, data["clean_res"].log_return_series, data["bench_returns"])
             st.pyplot(fig_mkt)
             plt.close(fig_mkt)
         else:
-            st.warning("Market benchmark regression unavailable.")
+            st.warning("Benchmark market regression is unavailable.")
 
-    # 7. Macro VAR Tab
-    with tab7:
-        st.subheader("Global Macro Linkages: Vector Autoregression (ATSA Unit 8)")
+        st.markdown("---")
+        st.subheader("Global Macro Transmission: Vector Autoregression")
         var_res = data["var_res"]
         if var_res:
-            st.write(f"- **System Dimension:** 5 variables across {var_res.aligned_obs} common trading sessions.")
-            st.write(f"- **Selected Lag Order:** p={var_res.selected_lag} | **Stability:** {'Stable (Roots < 1)' if var_res.is_stable else 'Unstable'}")
-            st.write(f"- **Cholesky Ordering:** `{var_res.cholesky_order}`")
+            st.markdown(
+                f"Estimates a 5-variable macro system [S&P 500, Brent Crude, USD/INR, India VIX, NIFTY 50] "
+                f"across **{var_res.aligned_obs}** overlapping trading dates. "
+                f"Optimal lag order: **p={var_res.selected_lag}** | "
+                f"System Stability: **{'Stable (all roots < 1)' if var_res.is_stable else 'Unstable'}**"
+            )
 
-            st.markdown("##### Granger Causality Tests on NIFTY 50")
-            for g in var_res.granger_tests:
-                st.write(f"- {g.conclusion}")
+            st.markdown("##### Granger Causality Lead-Lag Tests on NIFTY 50")
+            granger_table = pd.DataFrame(
+                [
+                    {
+                        "Macro Factor": g.causing_variable,
+                        "F-Statistic": f"{g.f_statistic:.2f}",
+                        "p-value": f"{g.p_value:.4f}",
+                        "Leads NIFTY 50 (5% sig)": "Yes" if g.is_causal_05 else "No",
+                        "Transmission Verdict": g.conclusion,
+                    }
+                    for g in var_res.granger_tests
+                ]
+            )
+            st.table(granger_table)
 
             fig_var = plot_var_diagnostics_and_irf(var_res)
             st.pyplot(fig_var)
             plt.close(fig_var)
 
-            st.markdown("##### NIFTY 50 Forecast Error Variance Decomposition (FEVD %)")
+            st.markdown("##### Forecast Error Variance Decomposition (FEVD) of NIFTY 50 (%)")
             st.dataframe(var_res.fevd_nifty_horizon10, use_container_width=True)
         else:
-            st.warning("Macro VAR analysis was skipped due to insufficient aligned observations or system instability.")
+            st.warning("Global macro VAR analysis was skipped due to insufficient overlapping observations.")
 
-    # 8. Out-of-Sample Evaluation Tab
-    with tab8:
-        st.subheader("Expanding-Window Rolling-Origin Out-of-Sample Evaluation (ATSA Units 4 & 5)")
+    # ==========================================
+    # TAB 5: Model Diagnostics & Backtest
+    # ==========================================
+    with tab5:
+        st.subheader("Model Residual Diagnostics")
+        best_arma = data["arma_search"].best_model
+        st.markdown(
+            f"Assesses whether residual errors of the selected model ARIMA{data['arma_search'].best_order} "
+            f"behave as Gaussian white noise. "
+            f"**Ljung-Box p-value (Lag 10): {best_arma.lb_df.iloc[0]['lb_pvalue']:.4f}** | "
+            f"**Jarque-Bera Normality p-value: {best_arma.jb_pvalue:.4f}**"
+        )
+        fig_resid = plot_arma_residual_diagnostics(best_arma, data["display_name"])
+        st.pyplot(fig_resid)
+        plt.close(fig_resid)
+
+        st.markdown("---")
+        st.subheader("Out-of-Sample Expanding-Window Backtest")
         ev = data["eval_res"]
-        st.write(f"- **Origins Evaluated:** {ev.n_origins_evaluated} expanding-window origins without look-ahead bias.")
-        st.write(f"- **Horizon:** {ev.horizon} days | **Initial Window:** {ev.initial_window} days | **Step:** {ev.step_size} days")
-        st.info(ev.summary_verdict)
+        st.markdown(
+            f"Strictly chronological expanding-window rolling-origin evaluation without look-ahead bias across "
+            f"**{ev.n_origins_evaluated} evaluation origins** (Horizon = {ev.horizon} days)."
+        )
+        st.markdown(f"**Backtest Conclusion**: {ev.summary_verdict}")
 
-        st.markdown("##### Metric Comparison Table")
-        st.dataframe(ev.metrics_table, use_container_width=True)
+        st.markdown("##### Accuracy Comparison vs Competing Baselines")
+        st.table(ev.metrics_table)
 
-    # 9. Full Report Tab
-    with tab9:
-        st.subheader("Complete ATSA Markdown Report")
-        from risklens.report import build_markdown_report
+    # ==========================================
+    # TAB 6: Full Audit Report & Data Export
+    # ==========================================
+    with tab6:
+        st.subheader("Audit Report & Data Export")
         report_md = build_markdown_report(data["assembled_results"], data["narrative"])
-        st.download_button("📥 Download Report (Markdown)", report_md, file_name=f"risklens_report_{data['symbol_code']}.md")
+
+        col_d1, col_d2 = st.columns([1, 4])
+        with col_d1:
+            st.download_button(
+                "Download Markdown Report",
+                report_md,
+                file_name=f"risklens_report_{data['symbol_code']}.md",
+                mime="text/markdown",
+            )
+
+        st.markdown("---")
         st.markdown(report_md)
 else:
-    st.info("👈 Please select an Indian Mutual Fund or Equity Symbol in the sidebar and click **'Run ATSA Analysis'** to begin.")
+    st.info("Select an Indian Stock symbol or Mutual Fund query in the sidebar and click **'Run Quantitative Analysis'** to begin.")

@@ -70,15 +70,15 @@ def generate_deterministic_narrative(results_data: dict[str, Any]) -> str:
 
     # Narrative building
     lines: list[str] = []
-    lines.append(f"### Executive Summary & ATSA Analysis for {asset_name} ({symbol})")
+    lines.append(f"### Quantitative Risk & Market Profile: {asset_name} ({symbol})")
     lines.append(
         f"Data sampled through **{last_date}** comprises **{n_obs}** cleaned trading sessions. "
-        "All calculations represent real market observations processed via rigorous econometric routines."
+        "All calculations represent real market observations processed via verified statistical models."
     )
     lines.append("")
 
     # Section 1
-    lines.append("#### 1. Stationarity & Order of Integration (ATSA Units 1 & 5)")
+    lines.append("#### 1. Time Series Stationarity & Integration Properties")
     lines.append(
         f"- **Log Price / NAV**: Categorized as **{price_verdict}**.\n"
         f"- **Log Returns**: Categorized as **{ret_verdict}** "
@@ -88,7 +88,7 @@ def generate_deterministic_narrative(results_data: dict[str, Any]) -> str:
     lines.append("")
 
     # Section 2
-    lines.append("#### 2. Calendar Anomalies & Time Series Decomposition (ATSA Unit 1)")
+    lines.append("#### 2. Calendar Patterns & Structural Decomposition")
     if dow_sig:
         lines.append(
             f"- Statistical tests identify **significant day-of-week calendar effects** (OLS F-test p = {dow_f_p:.4f} < 0.05). "
@@ -106,7 +106,7 @@ def generate_deterministic_narrative(results_data: dict[str, Any]) -> str:
     lines.append("")
 
     # Section 3
-    lines.append("#### 3. Conditional Mean Predictability (ATSA Units 3 & 4)")
+    lines.append("#### 3. Return Predictability & Market Efficiency")
     lines.append(
         f"- Grid search selected **ARIMA{best_order}** via AICc. "
         f"Relative to a constant-drift random walk benchmark, Delta AICc is **{delta_aicc:.2f}**."
@@ -123,7 +123,7 @@ def generate_deterministic_narrative(results_data: dict[str, Any]) -> str:
     lines.append("")
 
     # Section 4
-    lines.append("#### 4. Realized Volatility & Risk Forecast (ATSA Units 4, 5 & 8)")
+    lines.append("#### 4. Realized Volatility & Downside Risk Profile")
     lines.append(
         f"- **Current Realized Volatility**: **{last_vol:.2f}%** annualized (21-day rolling window).\n"
         f"- **30-Day Forecast Range**: **[{risk_min:.2f}% - {risk_max:.2f}%]** annualized (90% bootstrap interval).\n"
@@ -134,7 +134,7 @@ def generate_deterministic_narrative(results_data: dict[str, Any]) -> str:
     lines.append("")
 
     # Section 5
-    lines.append(f"#### 5. Systematic Benchmark Linkage vs {bench_name} (ATSA Units 2 & 5)")
+    lines.append(f"#### 5. Benchmark Sensitivity & Market Beta vs {bench_name}")
     alpha_status = "significant" if alpha_p < 0.05 else "not statistically significant"
     lines.append(
         f"- **Market Beta**: **{beta:.3f}** (SE = {mkt.get('beta_se', 0.0):.3f}).\n"
@@ -144,7 +144,7 @@ def generate_deterministic_narrative(results_data: dict[str, Any]) -> str:
     lines.append("")
 
     # Section 6
-    lines.append("#### 6. Global Macro Linkages & VAR Analysis (ATSA Unit 8)")
+    lines.append("#### 6. Global Macro Transmission & Lead-Lag Dynamics")
     if var_available:
         lines.append(
             f"- Stable VAR system estimated at lag **p = {var_lag}** across 5 global macro factors.\n"

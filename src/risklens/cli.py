@@ -402,11 +402,11 @@ def print_terminal_summary(results: dict[str, Any]) -> None:
     ev = results.get("evaluation", {})
 
     print("\n" + "=" * 80)
-    print(f" RISKLENS ATSA EXECUTIVE SUMMARY: {meta.get('name')} ({meta.get('symbol_or_code')})")
+    print(f" RISKLENS QUANTITATIVE RISK & MACRO MONITOR: {meta.get('name')} ({meta.get('symbol_or_code')})")
     print("=" * 80)
     print(f"Data Freshness : Source: {meta.get('source')} | Last Date: {meta.get('last_available_date')} | N={meta.get('n_observations')}")
     print("-" * 80)
-    print("STATISTICAL METHOD                   METRIC / RESULT                    ATSA CONCLUSION")
+    print("STATISTICAL ANALYSIS                 EMPIRICAL RESULT                   ANALYTICAL VERDICT")
     print("-" * 80)
     print(f"Unit Root Tests (Log Price)         ADF p={stat.get('price_adf_pvalue', 0):.4f}, KPSS p={stat.get('price_kpss_pvalue', 0):.4f}      {stat.get('log_price_verdict')}")
     print(f"Unit Root Tests (Log Returns)       ADF p={stat.get('returns_adf_pvalue', 0):.4f}, KPSS p={stat.get('returns_kpss_pvalue', 0):.4f}      {stat.get('log_returns_verdict')}")
@@ -421,7 +421,7 @@ def print_terminal_summary(results: dict[str, Any]) -> None:
         print(f"Macro VAR Linkages (5 Variables)    Lag p={var_dict.get('selected_lag')}, Granger Causal: {causal}    Stable VAR System (Cholesky)")
     print(f"Out-of-Sample MASE Evaluation       MASE Change vs Naive: {ev.get('model_mase_improvement_pct', 0):+.2f}%           {ev.get('n_origins')} expanding-window origins")
     print("=" * 80)
-    print("Disclaimer: For ATSA academic/educational evaluation only. Not investment advice.")
+    print("Disclaimer: For quantitative evaluation only. Not investment advice.")
     print("=" * 80 + "\n")
 
 
