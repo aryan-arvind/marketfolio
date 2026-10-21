@@ -14,5 +14,5 @@ reports/
 # IDE & OS
 .vscode/
 .idea/
-.DS_Store
-Thumbs.db
+# Archives
+*.zip

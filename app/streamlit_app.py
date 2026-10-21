@@ -65,8 +65,14 @@ st.set_page_config(
 st.markdown(
     """
     <style>
-    .reportview-container, .main, header {
-        background-color: #0b0f19;
+    /* Global App Container */
+    .stApp, [data-testid="stAppViewContainer"], [data-testid="stSidebar"], header {
+        background-color: #0b0f19 !important;
+        color: #f1f5f9;
+    }
+    [data-testid="stSidebar"] {
+        background-color: #0e1424 !important;
+        border-right: 1px solid #1e293b;
     }
     .main-title {
         font-size: 1.85rem;
@@ -427,26 +433,28 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-if run_btn or "analysis_data" in st.session_state:
-    if run_btn:
-        with st.status(f"Processing {asset_input}...", expanded=True) as status_box:
-            status_box.write("Ingesting historical price series and cleaning data...")
-            try:
-                data = execute_analysis_cached(
-                    asset_mode=asset_mode,
-                    asset_input=asset_input,
-                    benchmark_symbol=benchmark_symbol,
-                    horizon=horizon,
-                    force_refresh=force_refresh,
-                    max_origins=max_origins,
-                )
-                st.session_state["analysis_data"] = data
-                status_box.update(label=f"Analysis complete for {asset_input}", state="complete", expanded=False)
-            except Exception as e:
-                status_box.update(label=f"Analysis failed: {e}", state="error", expanded=True)
-                st.error(f"Error during execution: {e}")
-                st.stop()
+needs_execution = run_btn or ("analysis_data" not in st.session_state)
 
+if needs_execution:
+    with st.status(f"Calibrating quantitative models for {asset_input}...", expanded=True) as status_box:
+        status_box.write("Ingesting historical price series and verifying integrity...")
+        try:
+            data = execute_analysis_cached(
+                asset_mode=asset_mode,
+                asset_input=asset_input,
+                benchmark_symbol=benchmark_symbol,
+                horizon=horizon,
+                force_refresh=force_refresh,
+                max_origins=max_origins,
+            )
+            st.session_state["analysis_data"] = data
+            status_box.update(label=f"Analysis calibrated for {asset_input}", state="complete", expanded=False)
+        except Exception as e:
+            status_box.update(label=f"Analysis failed: {e}", state="error", expanded=True)
+            st.error(f"Error during execution: {e}")
+            st.stop()
+
+if "analysis_data" in st.session_state:
     data = st.session_state["analysis_data"]
     meta = data["meta"]
 
