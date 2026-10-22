@@ -130,7 +130,7 @@ function OverviewView({ data }) {
           <div className="text-xs font-semibold text-[#94a3b8] uppercase tracking-wider mb-2 flex items-center justify-between">
             <span>Daily Return Distribution</span>
             <span className="text-[11px] text-[#64748b] font-mono">
-              Skew: {data.stats.skewness.toFixed(2)} | Kurt: {data.stats.kurtosis.toFixed(2)}
+              Skew: {(Number(data?.stats?.skewness) || 0).toFixed(2)} | Kurt: {(Number(data?.stats?.kurtosis) || 0).toFixed(2)}
             </span>
           </div>
           <div ref={chartRef} className="w-full h-[240px]" />
@@ -337,30 +337,30 @@ function VolatilityRiskView({ data }) {
         <div className="bg-[#131722] border border-[#242936] p-3 rounded">
           <div className="text-[10px] uppercase tracking-wider text-[#64748b]">Current 21D Vol</div>
           <div className="text-xl font-bold font-mono text-white mt-0.5">
-            {data.stats.vol_21d.toFixed(1)}% p.a.
+            {(Number(data?.stats?.vol_21d) || 0).toFixed(1)}% p.a.
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 font-mono">
-            Rank: {data.stats.vol_percentile.toFixed(0)}th percentile
+            Rank: {(Number(data?.stats?.vol_percentile) || 50).toFixed(0)}th percentile
           </div>
         </div>
 
         <div className="bg-[#131722] border border-[#242936] p-3 rounded">
           <div className="text-[10px] uppercase tracking-wider text-[#64748b]">Forecast Median</div>
           <div className="text-xl font-bold font-mono text-[#06b6d4] mt-0.5">
-            {data.stats.vol_forecast.toFixed(1)}% p.a.
+            {(Number(data?.stats?.vol_forecast) || 0).toFixed(1)}% p.a.
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 font-mono">
-            Band: [{data.stats.vol_band_low.toFixed(1)}% - {data.stats.vol_band_high.toFixed(1)}%]
+            Band: [{(Number(data?.stats?.vol_band_low) || 0).toFixed(1)}% - {(Number(data?.stats?.vol_band_high) || 0).toFixed(1)}%]
           </div>
         </div>
 
         <div className="bg-[#131722] border border-[#242936] p-3 rounded">
           <div className="text-[10px] uppercase tracking-wider text-[#64748b]">Max Historical Drawdown</div>
           <div className="text-xl font-bold font-mono text-[#f23645] mt-0.5">
-            {(data.stats.max_drawdown * 100).toFixed(1)}%
+            {((Number(data?.stats?.max_drawdown) || 0) * 100).toFixed(1)}%
           </div>
           <div className="text-[11px] text-[#94a3b8] mt-1 font-mono">
-            Sortino: {data.stats.sortino.toFixed(2)}
+            Sortino: {(Number(data?.stats?.sortino) || 0).toFixed(2)}
           </div>
         </div>
 

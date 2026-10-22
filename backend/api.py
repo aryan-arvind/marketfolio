@@ -85,13 +85,67 @@ def analyze_asset(req: AnalysisRequest):
 
     prices_s = raw["clean_res"].price_series
     returns_s = raw["clean_res"].log_return_series
-    stats_dict = calculate_derived_stats(prices_s, returns_s)
+    derived = calculate_derived_stats(prices_s, returns_s)
     vol_res = raw["vol_res"]
     stl_res = raw["stl_res"]
     cal_res = raw["cal_res"]
     mkt_res = raw["market_res"]
     eval_res = raw["eval_res"]
     var_res = raw["var_res"]
+
+    # Compute enriched stats dictionary matching TradingView frontend expectations
+    clean_rets = returns_s.dropna()
+    vol_21d = float(clean_rets.iloc[-21:].std() * np.sqrt(252) * 100.0) if len(clean_rets) >= 21 else 15.0
+    vol_63d = float(clean_rets.iloc[-63:].std() * np.sqrt(252) * 100.0) if len(clean_rets) >= 63 else vol_21d
+    rolling_21 = clean_rets.rolling(21).std() * np.sqrt(252) * 100.0
+    rolling_21 = rolling_21.dropna()
+    if len(rolling_21) > 0:
+        vol_pctile = float((rolling_21 < vol_21d).mean() * 100.0)
+    else:
+        vol_pctile = 50.0
+
+    boot_med_val = float(vol_res.boot_median[-1]) if vol_res and len(vol_res.boot_median) > 0 else vol_21d
+    boot_lo_val = float(vol_res.boot_lower_90[-1]) if vol_res and len(vol_res.boot_lower_90) > 0 else (vol_21d * 0.8)
+    boot_hi_val = float(vol_res.boot_upper_90[-1]) if vol_res and len(vol_res.boot_upper_90) > 0 else (vol_21d * 1.2)
+
+    ret_mean = float(clean_rets.mean()) if len(clean_rets) > 0 else 0.0
+    ret_std = float(clean_rets.std()) if len(clean_rets) > 0 else 0.01
+    sharpe = float((ret_mean / (ret_std + 1e-9)) * np.sqrt(252))
+    downside_rets = clean_rets[clean_rets < 0]
+    downside_std = float(downside_rets.std()) if len(downside_rets) > 1 else ret_std
+    sortino = float((ret_mean / (downside_std + 1e-9)) * np.sqrt(252))
+
+    cur_p = float(derived["latest_price"])
+    lo_52 = float(derived["low_52w"])
+    hi_52 = float(derived["high_52w"])
+    pos_52 = ((cur_p - lo_52) / (hi_52 - lo_52 + 1e-9)) * 100.0
+
+    stats_dict = {
+        "current_price": cur_p,
+        "latest_price": cur_p,
+        "prev_price": float(derived["prev_price"]),
+        "price_change": float(derived["price_change_1d"]),
+        "price_change_pct": float(derived["pct_change_1d"]),
+        "low_52w": lo_52,
+        "high_52w": hi_52,
+        "pos_52w_pct": _safe_float(pos_52),
+        "vol_21d": _safe_float(vol_21d),
+        "vol_63d": _safe_float(vol_63d),
+        "vol_percentile": _safe_float(vol_pctile),
+        "vol_forecast": _safe_float(boot_med_val),
+        "vol_band_low": _safe_float(boot_lo_val),
+        "vol_band_high": _safe_float(boot_hi_val),
+        "beta": _safe_float(mkt_res.arma_beta if mkt_res else 1.0),
+        "r_squared": _safe_float(mkt_res.ols_r_squared if mkt_res else 0.0),
+        "sharpe": _safe_float(sharpe),
+        "sortino": _safe_float(sortino),
+        "max_drawdown": _safe_float(abs(derived["max_drawdown_pct"]) / 100.0),
+        "max_drawdown_pct": _safe_float(derived["max_drawdown_pct"]),
+        "skewness": _safe_float(derived["skewness"]),
+        "kurtosis": _safe_float(derived["kurtosis"]),
+        "return_std": _safe_float(derived["return_std"]),
+        "n_extreme_sessions": int(derived["n_extreme_sessions"]),
+    }
 
     # 1. Price series & Returns
     price_dates = [d.strftime("%Y-%m-%d") for d in prices_s.index]
