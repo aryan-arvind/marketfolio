@@ -117,7 +117,10 @@ def fit_regression_arma(
     # 3. SARIMAX Grid Search for ARMA(p, q) errors
     best_aicc = float("inf")
     best_order = (0, 0, 0)
-    best_sarimax = None
+
+    y_search = y[-1500:] if len(y) > 1500 else y
+    X_search = X_scalar[-1500:] if len(X_scalar) > 1500 else X_scalar
+    n_search = len(y_search)
 
     for p in range(max_p + 1):
         for q in range(max_q + 1):
@@ -125,28 +128,35 @@ def fit_regression_arma(
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     model = SARIMAX(
-                        y,
-                        exog=X_scalar,
+                        y_search,
+                        exog=X_search,
                         order=(p, 0, q),
                         trend="c",
                         enforce_stationarity=True,
                         enforce_invertibility=False,
                     )
-                    res = model.fit(disp=False)
+                    res = model.fit(disp=False, maxiter=20)
                 k_params = len(res.params)
-                aicc = calculate_aicc(float(res.aic), n_obs, k_params)
+                aicc = calculate_aicc(float(res.aic), n_search, k_params)
                 if aicc < best_aicc:
                     best_aicc = aicc
                     best_order = (p, 0, q)
-                    best_sarimax = res
             except Exception:
                 continue
 
-    if best_sarimax is None:
-        logger.warning("SARIMAX grid search failed. Using ARMA(0,0,0) baseline.")
-        best_sarimax = SARIMAX(y, exog=X_scalar, order=(0, 0, 0), trend="c").fit(disp=False)
+    # Fit best order on full dataset
+    try:
+        best_sarimax = SARIMAX(
+            y,
+            exog=X_scalar,
+            order=best_order,
+            trend="c",
+            enforce_stationarity=True,
+            enforce_invertibility=False,
+        ).fit(disp=False, maxiter=25)
+    except Exception:
+        best_sarimax = SARIMAX(y, exog=X_scalar, order=(0, 0, 0), trend="c").fit(disp=False, maxiter=20)
         best_order = (0, 0, 0)
-        best_aicc = calculate_aicc(float(best_sarimax.aic), n_obs, len(best_sarimax.params))
 
     # Extract SARIMAX estimates
     # Parameter order in SARIMAX: intercept ('intercept'), beta ('x1'), then AR, then MA, then sigma2

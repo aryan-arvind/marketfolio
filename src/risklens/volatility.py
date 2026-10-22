@@ -94,34 +94,39 @@ def select_and_fit_volatility_arima(
     d = 0 if diag.adf_pvalue < 0.05 else 1
 
     clean_vals = log_vol.dropna().to_numpy()
-    nobs = len(clean_vals)
+    search_vals = clean_vals[-1500:] if len(clean_vals) > 1500 else clean_vals
+    nobs_search = len(search_vals)
 
     best_aicc = float("inf")
     best_order = (1, d, 1)
-    best_fit = None
 
-    for p in range(4):
-        for q in range(4):
+    for p in range(3):
+        for q in range(3):
             order = (p, d, q)
             trend = "c" if d == 0 else None
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
-                    model = ARIMA(clean_vals, order=order, trend=trend)
-                    res = model.fit()
-                aicc = calculate_aicc(float(res.aic), nobs, len(res.params))
+                    model = ARIMA(search_vals, order=order, trend=trend)
+                    res = model.fit(method_kwargs={"maxiter": 25, "disp": False})
+                aicc = calculate_aicc(float(res.aic), nobs_search, len(res.params))
                 if aicc < best_aicc:
                     best_aicc = aicc
                     best_order = order
-                    best_fit = res
             except Exception:
                 continue
 
-    if best_fit is None:
-        # Fallback to simple AR(1)
-        logger.warning("Volatility ARIMA grid search failed to converge. Falling back to ARIMA(1,%d,0).", d)
+    # Fit the chosen best order on the full historical series
+    trend = "c" if d == 0 else None
+    try:
+        best_fit = ARIMA(clean_vals, order=best_order, trend=trend).fit(
+            method_kwargs={"maxiter": 30, "disp": False}
+        )
+    except Exception:
         best_order = (1, d, 0)
-        best_fit = ARIMA(clean_vals, order=best_order, trend="c" if d == 0 else None).fit()
+        best_fit = ARIMA(clean_vals, order=best_order, trend=trend).fit(
+            method_kwargs={"maxiter": 25, "disp": False}
+        )
 
     logger.info("Selected Volatility ARIMA%s for '%s' (AICc=%.2f)", best_order, asset_name, best_aicc)
     return best_order, best_fit

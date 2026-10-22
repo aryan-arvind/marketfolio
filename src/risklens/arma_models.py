@@ -88,7 +88,7 @@ def fit_single_arima(
         warnings.simplefilter("ignore", ConvergenceWarning)
         warnings.simplefilter("ignore", UserWarning)
         model = ARIMA(clean_vals, order=(p, d, q), trend=actual_trend)
-        res: ARIMAResults = model.fit()
+        res: ARIMAResults = model.fit(method_kwargs={"maxiter": 25, "disp": False})
 
     k_params = len(res.params)
     aic = float(res.aic)
@@ -142,8 +142,8 @@ def grid_search_arma(
     series: pd.Series,
     asset_name: str,
     d: int = 0,
-    max_p: int = 3,
-    max_q: int = 3,
+    max_p: int = 2,
+    max_q: int = 2,
 ) -> GridSearchResult:
     """
     Performs grid search over p in 0..max_p and q in 0..max_q.
@@ -154,11 +154,13 @@ def grid_search_arma(
     models_dict: dict[tuple[int, int, int], ARMAModelSummary] = {}
     failed_orders: list[tuple[int, int, int]] = []
 
+    search_series = series.iloc[-1500:] if len(series) > 1500 else series
+
     for p in range(max_p + 1):
         for q in range(max_q + 1):
             order = (p, d, q)
             try:
-                mod_summary = fit_single_arima(series, order, trend="c")
+                mod_summary = fit_single_arima(search_series, order, trend="c")
                 models_dict[order] = mod_summary
                 records.append(
                     {
@@ -183,14 +185,15 @@ def grid_search_arma(
     df_models = pd.DataFrame(records).sort_values(by="aicc").reset_index(drop=True)
     best_row = df_models.iloc[0]
     best_order = (int(best_row["p"]), int(best_row["d"]), int(best_row["q"]))
-    best_model = models_dict[best_order]
+    
+    # Fit best model on the complete historical series
+    best_model = fit_single_arima(series, best_order, trend="c")
+    models_dict[best_order] = best_model
 
-    # Baseline constant-mean model: ARIMA(0, d, 0)
+    # Baseline constant-mean model: ARIMA(0, d, 0) on full series
     const_order = (0, d, 0)
-    if const_order in models_dict:
-        const_model = models_dict[const_order]
-    else:
-        const_model = fit_single_arima(series, const_order, trend="c")
+    const_model = fit_single_arima(series, const_order, trend="c")
+    models_dict[const_order] = const_model
 
     # Predictability Verdict (Fama 1970 Weak-Form EMH)
     # A model beats constant mean if delta_aicc < -2.0 and residual LB indicates white noise

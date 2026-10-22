@@ -144,20 +144,23 @@ st.markdown(
 )
 
 
-@st.cache_data(ttl=21600, show_spinner=False)
-def execute_analysis_cached(
+def execute_analysis_pipeline(
     asset_mode: str,
     asset_input: str,
     benchmark_symbol: str,
     horizon: int,
     force_refresh: bool,
     max_origins: int = 12,
+    status_box: Any = None,
 ) -> dict[str, Any]:
     """
-    Cached quantitative analysis runner with 6-hour TTL.
+    Executes quantitative analysis pipeline with live step reporting.
     Executes data retrieval, cleaning, statistical modeling, and backtesting.
     """
     warnings_list: list[str] = []
+
+    if status_box:
+        status_box.write("Step 1/5: Ingesting & cleaning historical price series...")
 
     if asset_mode == "Indian Mutual Fund":
         scheme_code, scheme_name = resolve_mutual_fund(asset_input)
@@ -187,15 +190,24 @@ def execute_analysis_cached(
     lb_returns = compute_ljung_box(returns, lags=[10, 20])
     lb_sq_returns = compute_ljung_box(returns ** 2, lags=[10, 20])
 
+    if status_box:
+        status_box.write("Step 2/5: Fitting conditional mean ARMA & calendar tendencies...")
+
     # 3. Calendar Tendencies & Decomposition
     cal_res = analyze_calendar_effects(returns, display_name)
     stl_res = run_stl_decomposition(prices, display_name, period=21)
 
-    # 4. Conditional Mean ARMA
-    arma_search = grid_search_arma(returns, display_name, d=0, max_p=3, max_q=3)
+    # 4. Conditional Mean ARMA (max_p=2, max_q=2 for rapid convergence)
+    arma_search = grid_search_arma(returns, display_name, d=0, max_p=2, max_q=2)
+
+    if status_box:
+        status_box.write("Step 3/5: Estimating realized volatility cone & bootstrap simulation...")
 
     # 5. Volatility Modeling & Bootstrap Forecast
     vol_res = forecast_volatility(returns, display_name, horizon=horizon)
+
+    if status_box:
+        status_box.write("Step 4/5: Computing market beta & global macro transmission (VAR)...")
 
     # 6. Benchmark Sensitivity Regression
     bench_clean = None
@@ -215,6 +227,9 @@ def execute_analysis_cached(
         v_res, v_ok, _ = run_var_analysis(aligned_macro)
         if v_ok:
             var_res = v_res
+
+    if status_box:
+        status_box.write("Step 5/5: Running rolling-origin out-of-sample backtest...")
 
     # 8. Out-of-Sample Rolling-Origin Backtesting
     eval_res = run_rolling_origin_evaluation(
@@ -433,26 +448,61 @@ st.markdown(
     unsafe_allow_html=True,
 )
 
-needs_execution = run_btn or ("analysis_data" not in st.session_state)
+# Check if user triggered run from main page or sidebar
+if st.session_state.get("trigger_run"):
+    run_btn = True
+    del st.session_state["trigger_run"]
 
-if needs_execution:
+has_data = "analysis_data" in st.session_state
+current_analyzed = st.session_state.get("analyzed_target")
+
+# If the user changed the input in the sidebar, reset current data so it doesn't show old asset
+if has_data and current_analyzed != asset_input and not run_btn:
+    del st.session_state["analysis_data"]
+    has_data = False
+
+if run_btn:
     with st.status(f"Calibrating quantitative models for {asset_input}...", expanded=True) as status_box:
-        status_box.write("Ingesting historical price series and verifying integrity...")
         try:
-            data = execute_analysis_cached(
+            data = execute_analysis_pipeline(
                 asset_mode=asset_mode,
                 asset_input=asset_input,
                 benchmark_symbol=benchmark_symbol,
                 horizon=horizon,
                 force_refresh=force_refresh,
                 max_origins=max_origins,
+                status_box=status_box,
             )
             st.session_state["analysis_data"] = data
+            st.session_state["analyzed_target"] = asset_input
             status_box.update(label=f"Analysis calibrated for {asset_input}", state="complete", expanded=False)
         except Exception as e:
             status_box.update(label=f"Analysis failed: {e}", state="error", expanded=True)
             st.error(f"Error during execution: {e}")
             st.stop()
+elif not has_data:
+    st.markdown(
+        f"""
+        <div class="metric-card" style="padding: 2rem; border: 1px solid #23314a; margin-top: 1rem; border-radius: 4px;">
+            <div style="font-size: 1.2rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.5rem;">
+                RiskLens Terminal Standby
+            </div>
+            <div style="font-size: 0.92rem; color: #94a3b8; line-height: 1.6; margin-bottom: 1rem;">
+                Configured Asset: <span style="color: #60a5fa; font-weight: 600;">{asset_input}</span> &nbsp;&bull;&nbsp;
+                Benchmark: <span style="color: #60a5fa; font-weight: 600;">{benchmark_symbol}</span> &nbsp;&bull;&nbsp;
+                Horizon: <span style="color: #60a5fa; font-weight: 600;">{horizon} Days</span> &nbsp;&bull;&nbsp;
+                Backtest Depth: <span style="color: #60a5fa; font-weight: 600;">{max_origins} Origins</span>
+            </div>
+            <div style="font-size: 0.84rem; color: #64748b; margin-bottom: 1.4rem;">
+                System is ready. Click <b>Run Quantitative Analysis</b> to ingest real data, evaluate integration orders, calibrate the volatility cone, and estimate macro linkages.
+            </div>
+        </div>
+        """,
+        unsafe_allow_html=True,
+    )
+    if st.button("Run Quantitative Analysis for " + asset_input, type="primary", use_container_width=True):
+        st.session_state["trigger_run"] = True
+        st.rerun()
 
 if "analysis_data" in st.session_state:
     data = st.session_state["analysis_data"]
