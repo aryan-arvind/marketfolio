@@ -273,7 +273,7 @@ def execute_analysis_pipeline(
             "lb_sq_returns_pvalue_lag10": float(lb_sq_returns.loc[10, "lb_pvalue"]),
         },
         "seasonality": {
-            "day_of_week_significant": cal_res.is_dow_significant,
+            "day_of_week_significant": cal_res.is_day_of_week_significant,
             "ols_f_stat": cal_res.ols_f_stat,
             "ols_f_pvalue": cal_res.ols_f_pvalue,
             "kruskal_stat": cal_res.kruskal_stat,
@@ -316,7 +316,7 @@ def execute_analysis_pipeline(
                 "alpha_pvalue": market_res.arma_alpha_pvalue,
                 "r_squared": market_res.ols_r_squared,
                 "durbin_watson": market_res.ols_dw_stat,
-                "ols_lb_pvalue": market_res.ols_residual_lb_pvalue,
+                "ols_lb_pvalue": market_res.ols_lb_pvalue,
                 "interpretation": market_res.interpretation,
             }
             if market_res
@@ -332,7 +332,7 @@ def execute_analysis_pipeline(
                 "granger_details": [
                     {
                         "var": g.causing_variable,
-                        "f_stat": g.f_statistic,
+                        "f_stat": g.f_stat,
                         "p_val": g.p_value,
                         "conclusion": g.conclusion,
                     }
@@ -347,7 +347,7 @@ def execute_analysis_pipeline(
         "evaluation": {
             "n_origins": eval_res.n_origins_evaluated,
             "horizon": eval_res.horizon,
-            "model_mase_improvement_pct": eval_res.model_mase_improvement_pct,
+            "model_mase_improvement_pct": eval_res.model_metrics.mase_improvement_pct,
             "table_rows": eval_res.metrics_table.to_dict(orient="records"),
             "verdict": eval_res.summary_verdict,
         },
