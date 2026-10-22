@@ -25,5 +25,7 @@ automation_audit.log
 .agents/
 .claude/
 skills-lock.json
-
-
+# Node / Frontend
+node_modules/
+frontend/node_modules/
+antigravity.py
