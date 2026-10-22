@@ -1,5 +1,5 @@
 """
-RiskLens: Quantitative Risk & Macro-Linkage Terminal.
+MarketFolio: Quantitative Risk & Macro-Linkage Terminal.
 Interactive institutional dashboard for Indian equities and mutual funds.
 Run via: streamlit run app/streamlit_app.py
 """
@@ -56,7 +56,7 @@ from risklens.var_analysis import plot_var_diagnostics_and_irf, run_var_analysis
 from risklens.volatility import forecast_volatility, plot_volatility_forecast
 
 st.set_page_config(
-    page_title="RiskLens | Quantitative Risk & Macro Monitor",
+    page_title="MarketFolio | Quantitative Risk & Macro Monitor",
     layout="wide",
     initial_sidebar_state="expanded",
 )
@@ -381,7 +381,7 @@ def execute_analysis_pipeline(
 # ==============================
 # UI Sidebar Configuration
 # ==============================
-st.sidebar.markdown("### RiskLens Parameters")
+st.sidebar.markdown("### MarketFolio Parameters")
 asset_mode = st.sidebar.radio(
     "Asset Selection",
     ["Indian Stock / Index", "Indian Mutual Fund"],
@@ -442,7 +442,7 @@ st.sidebar.markdown(
 )
 
 # Main Terminal Header
-st.markdown('<div class="main-title">RiskLens: Quantitative Risk & Macro Monitor</div>', unsafe_allow_html=True)
+st.markdown('<div class="main-title">MarketFolio: Quantitative Risk & Macro Monitor</div>', unsafe_allow_html=True)
 st.markdown(
     '<div class="sub-title">Real-time risk assessment, volatility forecasting, and macro linkage analysis for Indian financial markets.</div>',
     unsafe_allow_html=True,
@@ -485,7 +485,7 @@ elif not has_data:
         f"""
         <div class="metric-card" style="padding: 2rem; border: 1px solid #23314a; margin-top: 1rem; border-radius: 4px;">
             <div style="font-size: 1.2rem; font-weight: 700; color: #f1f5f9; margin-bottom: 0.5rem;">
-                RiskLens Terminal Standby
+                MarketFolio Terminal Standby
             </div>
             <div style="font-size: 0.92rem; color: #94a3b8; line-height: 1.6; margin-bottom: 1rem;">
                 Configured Asset: <span style="color: #60a5fa; font-weight: 600;">{asset_input}</span> &nbsp;&bull;&nbsp;
@@ -732,7 +732,7 @@ if "analysis_data" in st.session_state:
                 [
                     {
                         "Macro Factor": g.causing_variable,
-                        "F-Statistic": f"{g.f_statistic:.2f}",
+                        "F-Statistic": f"{g.f_stat:.2f}",
                         "p-value": f"{g.p_value:.4f}",
                         "Leads NIFTY 50 (5% sig)": "Yes" if g.is_causal_05 else "No",
                         "Transmission Verdict": g.conclusion,

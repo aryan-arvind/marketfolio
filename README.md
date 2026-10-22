@@ -1,16 +1,16 @@
-# RiskLens: Real-Data Risk & Macro-Linkage Monitor for Indian Mutual Funds and Equities
+# MarketFolio: Real-Data Risk & Macro-Linkage Monitor for Indian Mutual Funds and Equities
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10--3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
 [![Course: ATSA](https://img.shields.io/badge/University%20Project-Applied%20Time%20Series%20Analysis-purple)]()
 
-**RiskLens** is an end-to-end quantitative time series analysis system designed for Indian mutual funds and equities. Developed as a capstone project for **Applied Time Series Analysis (ATSA)**, it connects directly to live public financial APIs, processes real daily time series, executes rigorous econometric routines, and produces production-grade diagnostic reports, visualizations, and an interactive Streamlit dashboard.
+**MarketFolio** is an end-to-end quantitative time series analysis system designed for Indian mutual funds and equities. Developed as a capstone project for **Applied Time Series Analysis (ATSA)**, it connects directly to live public financial APIs, processes real daily time series, executes rigorous econometric routines, and produces production-grade diagnostic reports, visualizations, and an interactive Streamlit dashboard.
 
 ---
 
-## 1. What RiskLens Does
+## 1. What MarketFolio Does
 
-RiskLens investigates the statistical and economic properties of asset prices and returns across several core dimensions:
+MarketFolio investigates the statistical and economic properties of asset prices and returns across several core dimensions:
 1. **Stationarity & Integration**: Distinguishes stochastic trends from stationary processes using joint ADF and KPSS tests on both log price levels and log returns.
 2. **Seasonality & Calendar Anomalies**: Evaluates day-of-week and month-of-year return distributions via OLS dummy regressions and non-parametric Kruskal-Wallis tests, and decomposes price dynamics via robust STL decomposition ($F_T, F_S$).
 3. **Conditional Mean Predictability & Market Efficiency**: Executes AICc-guided grid search over candidate $\text{ARMA}(p, q)$ structures, benchmarking against a constant-drift martingale to empirically evaluate Fama's (1970) Weak-Form Efficient Market Hypothesis.
