@@ -16,3 +16,14 @@ reports/
 .idea/
 # Archives
 *.zip
+
+# Scratch & Automation
+scratch/
+automation_audit.log
+
+# Agent & IDE configs
+.agents/
+.claude/
+skills-lock.json
+
+
