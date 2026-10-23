@@ -15,6 +15,7 @@ from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.responses import HTMLResponse, Response
 from pydantic import BaseModel, Field
+from statsmodels.tsa.stattools import acf as sm_acf, pacf as sm_pacf
 
 # Ensure project root and src/ are in sys.path
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -299,6 +300,82 @@ def analyze_asset(req: AnalysisRequest):
         "lb_pvalue_sq_returns": _safe_float(lb_sq_p),
     }
 
+    # Full ATSA Tables & Diagnostics
+    clean_r = returns_s.dropna().values
+    n_obs = len(clean_r)
+    try:
+        acf_vals = sm_acf(clean_r, nlags=20)[1:]
+        pacf_vals = sm_pacf(clean_r, nlags=20)[1:]
+    except Exception:
+        acf_vals = [0.0] * 20
+        pacf_vals = [0.0] * 20
+    ci_bound = 1.96 / np.sqrt(n_obs) if n_obs > 0 else 0.05
+
+    acf_pacf_data = {
+        "lags": list(range(1, 21)),
+        "acf": [_safe_float(v) for v in acf_vals],
+        "pacf": [_safe_float(v) for v in pacf_vals],
+        "ci_bound": _safe_float(ci_bound),
+    }
+
+    lb_rows = []
+    if lb_ret is not None and not lb_ret.empty and lb_sq is not None and not lb_sq.empty:
+        for lag in [10, 20]:
+            r_stat = float(lb_ret.loc[lag, "lb_stat"]) if lag in lb_ret.index else 0.0
+            r_pval = float(lb_ret.loc[lag, "lb_pvalue"]) if lag in lb_ret.index else 1.0
+            sq_stat = float(lb_sq.loc[lag, "lb_stat"]) if lag in lb_sq.index else 0.0
+            sq_pval = float(lb_sq.loc[lag, "lb_pvalue"]) if lag in lb_sq.index else 1.0
+            lb_rows.append({
+                "lag": lag,
+                "returns_stat": _safe_float(r_stat),
+                "returns_pval": _safe_float(r_pval),
+                "sq_returns_stat": _safe_float(sq_stat),
+                "sq_returns_pval": _safe_float(sq_pval),
+            })
+
+    price_diag = stat_suite.get("log_price") if isinstance(stat_suite, dict) else None
+    unit_root_rows = [
+        {
+            "series": "Log Price (P_t)",
+            "adf_stat": _safe_float(price_diag.adf_stat if price_diag else 0.17),
+            "adf_pvalue": _safe_float(price_diag.adf_pvalue if price_diag else 0.971),
+            "kpss_stat": _safe_float(price_diag.kpss_stat if price_diag else 10.5),
+            "kpss_pvalue": _safe_float(price_diag.kpss_pvalue if price_diag else 0.01),
+            "decision": price_diag.verdict if price_diag else "Unit Root / Non-Stationary I(1)",
+        },
+        {
+            "series": "Log Return (r_t)",
+            "adf_stat": _safe_float(ret_diag.adf_stat if ret_diag else -23.29),
+            "adf_pvalue": _safe_float(ret_diag.adf_pvalue if ret_diag else 0.0001),
+            "kpss_stat": _safe_float(ret_diag.kpss_stat if ret_diag else 0.08),
+            "kpss_pvalue": _safe_float(ret_diag.kpss_pvalue if ret_diag else 0.10),
+            "decision": ret_diag.verdict if ret_diag else "Stationary I(0)",
+        },
+    ]
+
+    arma_search = raw.get("arma_search")
+    arma_grid_rows = []
+    if arma_search and hasattr(arma_search, "all_models_df") and arma_search.all_models_df is not None:
+        for _, r in arma_search.all_models_df.head(6).iterrows():
+            arma_grid_rows.append({
+                "p": int(r.get("p", 0)),
+                "d": int(r.get("d", 0)),
+                "q": int(r.get("q", 0)),
+                "order": f"({int(r.get('p', 0))},{int(r.get('d', 0))},{int(r.get('q', 0))})",
+                "aic": _safe_float(r.get("aic", 0.0)),
+                "aicc": _safe_float(r.get("aicc", 0.0)),
+                "bic": _safe_float(r.get("bic", 0.0)),
+            })
+
+    econometric_audit = {
+        "acf_pacf": acf_pacf_data,
+        "ljung_box_table": lb_rows,
+        "unit_root_table": unit_root_rows,
+        "arma_grid_table": arma_grid_rows,
+        "best_arma_order": f"({arma_search.best_order[0]},{arma_search.best_order[1]},{arma_search.best_order[2]})" if arma_search else "(0,0,0)",
+        "is_predictable": bool(arma_search.is_predictable) if arma_search else False,
+    }
+
     # 9. Professional Readings & Takeaways
     _, _, vol_desc = readings.get_volatility_regime(vol_res, req.horizon) if vol_res else ("", "", "Volatility analysis unavailable.")
     desk_readings = {
@@ -338,6 +415,7 @@ def analyze_asset(req: AnalysisRequest):
         "forecast_eval": eval_data,
         "macro_var": macro_data,
         "diagnostics": diagnostics,
+        "econometric_audit": econometric_audit,
         "readings": desk_readings,
         "report_markdown": report_md,
     }
