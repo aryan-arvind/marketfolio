@@ -464,8 +464,8 @@ function ReturnsView({ data }) {
             </div>
           </div>
 
-          <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#94a3b8] leading-relaxed">
-            <b className="text-[#06b6d4] font-mono">ATSA Inference:</b> Lags fall within the 95% Bartlett confidence limits (±{((acfPacf.ci_bound || 0.05) * 100).toFixed(2)}%), confirming that linear price return autocorrelations are negligible (Weak-form informational efficiency / near-martingale price behavior).
+          <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#cbd5e1] leading-relaxed">
+            <b className="text-[#06b6d4] font-mono">Key Takeaway:</b> All bars stay inside the dashed boundary lines. This proves that daily price changes have almost zero memory — yesterday's gain does not guarantee today's gain, showing that daily price direction is mostly random noise.
           </div>
         </div>
 
@@ -505,8 +505,8 @@ function ReturnsView({ data }) {
               </div>
             </div>
 
-            <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#94a3b8] leading-relaxed">
-              <b className="text-[#06b6d4] font-mono">ATSA Inference:</b> The test statistic jumps dramatically on squared returns ($r_t^2$) with $p &lt; 0.0001$. Even when raw returns have low serial correlation, squared returns exhibit extreme correlation. This proves <b>Conditional Heteroskedasticity (ARCH clustering)</b>, mathematically justifying GARCH(1,1) risk modeling.
+            <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#cbd5e1] leading-relaxed">
+              <b className="text-[#06b6d4] font-mono">Key Takeaway:</b> While daily price direction is random (small return stats), the <i>size of market swings</i> is strongly connected (huge squared return stats over 1,000+). This proves <b>volatility clustering</b>: calm days group together, and volatile crash days group together. That is why forecasting risk via GARCH works so well.
             </div>
           </div>
 
@@ -554,8 +554,8 @@ function ReturnsView({ data }) {
               </div>
             </div>
 
-            <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#94a3b8] leading-relaxed">
-              <b className="text-[#06b6d4] font-mono">ATSA Inference:</b> Log Price $P_t$ is non-stationary with a unit root ($I(1)$). First-differenced Log Returns $r_t$ reject the unit root ($p &lt; 0.0001$) and fail to reject KPSS stationarity, proving strict covariance stationarity ($I(0)$).
+            <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#cbd5e1] leading-relaxed">
+              <b className="text-[#06b6d4] font-mono">Key Takeaway:</b> Raw stock prices drift without a fixed anchor (Non-Stationary). But daily percentage changes (returns) reliably hover around zero with a stable spread (Stationary). Therefore, all our statistical models must run on daily returns, never on raw prices.
             </div>
           </div>
         </div>
@@ -605,8 +605,8 @@ function ReturnsView({ data }) {
               </table>
             </div>
 
-            <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#94a3b8] leading-relaxed">
-              <b className="text-[#06b6d4] font-mono">ATSA Inference:</b> Model order (p, 0, q) is chosen via parsimonious penalization (AIC/BIC). Small &Delta;AIC values show that directional returns are near-martingale, highlighting why volatility modeling is paramount for risk management.
+            <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#cbd5e1] leading-relaxed">
+              <b className="text-[#06b6d4] font-mono">Key Takeaway:</b> The system tests multiple time-series configurations and automatically selects the simplest one that fits the data well, preventing over-complication or memorizing random noise.
             </div>
           </div>
         )}
