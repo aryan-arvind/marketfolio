@@ -597,7 +597,7 @@ function ReturnsView({ data }) {
             </div>
 
             <div className="mt-3 p-2.5 bg-[#0c1017] border border-[#1e222d] rounded text-[11px] text-[#94a3b8] leading-relaxed">
-              <b className="text-[#06b6d4] font-mono">ATSA Inference:</b> Model order $(p, 0, q)$ is chosen via parsimonious penalization (AIC/BIC). Small $\Delta\text{AIC}$ values show that directional returns are near-martingale, highlighting why volatility modeling is paramount for risk management.
+              <b className="text-[#06b6d4] font-mono">ATSA Inference:</b> Model order (p, 0, q) is chosen via parsimonious penalization (AIC/BIC). Small &Delta;AIC values show that directional returns are near-martingale, highlighting why volatility modeling is paramount for risk management.
             </div>
           </div>
         )}
