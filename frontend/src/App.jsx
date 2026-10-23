@@ -3,6 +3,7 @@ import TopBar from './components/TopBar';
 import HeaderStatsStrip from './components/HeaderStatsStrip';
 import TradingViewChart from './components/TradingViewChart';
 import DeskTabs from './components/DeskTabs';
+import CalibrationProgress from './components/CalibrationProgress';
 import { AlertCircle, RefreshCw, Terminal } from 'lucide-react';
 
 export default function App() {
@@ -16,6 +17,36 @@ export default function App() {
   const [data, setData] = useState(null);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState(null);
+  const [elapsedSeconds, setElapsedSeconds] = useState(0);
+  const [stepIndex, setStepIndex] = useState(0);
+
+  useEffect(() => {
+    let timer;
+    if (isLoading) {
+      setElapsedSeconds(0);
+      setStepIndex(0);
+      const start = Date.now();
+      timer = setInterval(() => {
+        const elapsed = Math.floor((Date.now() - start) / 1000);
+        setElapsedSeconds(elapsed);
+        if (elapsed < 3) {
+          setStepIndex(0);
+        } else if (elapsed < 7) {
+          setStepIndex(1);
+        } else if (elapsed < 12) {
+          setStepIndex(2);
+        } else if (elapsed < 17) {
+          setStepIndex(3);
+        } else {
+          setStepIndex(4);
+        }
+      }, 1000);
+    } else {
+      setElapsedSeconds(0);
+      setStepIndex(0);
+    }
+    return () => clearInterval(timer);
+  }, [isLoading]);
 
   const runAnalysis = async (customSymbol) => {
     const symbolToRun = customSymbol || assetInput;
@@ -123,7 +154,13 @@ export default function App() {
       )}
 
       {/* 3. Main Workspace */}
-      {data ? (
+      {isLoading ? (
+        <CalibrationProgress
+          assetInput={assetInput}
+          elapsedSeconds={elapsedSeconds}
+          stepIndex={stepIndex}
+        />
+      ) : data ? (
         <main className="flex-1 flex flex-col p-3 space-y-3">
           {/* Header Stats Strip */}
           <HeaderStatsStrip data={data} />
@@ -134,25 +171,6 @@ export default function App() {
           {/* Lower Section: 8 Analytical Secondary Tabs */}
           <DeskTabs data={data} onDownloadReport={handleDownloadReport} />
         </main>
-      ) : isLoading ? (
-        /* Calibration Loading Screen */
-        <div className="flex-1 flex items-center justify-center p-8">
-          <div className="text-center max-w-md bg-[#131722] border border-[#242936] p-8 rounded-lg shadow-2xl">
-            <div className="w-12 h-12 rounded-full bg-[#06b6d4]/10 border border-[#06b6d4]/30 flex items-center justify-center mx-auto mb-4 text-[#06b6d4]">
-              <RefreshCw className="animate-spin" size={22} />
-            </div>
-            <h2 className="text-base font-bold text-white mb-1.5 font-mono">
-              Calibrating Econometric Engine...
-            </h2>
-            <p className="text-xs text-[#94a3b8] mb-4 leading-relaxed">
-              Fitting ARIMA models, calculating GARCH residual bootstrap bounds, and evaluating out-of-sample backtest windows for{' '}
-              <span className="text-[#06b6d4] font-mono font-semibold">{assetInput}</span>.
-            </p>
-            <div className="w-full bg-[#1e222d] h-1.5 rounded-full overflow-hidden">
-              <div className="bg-[#06b6d4] h-full w-2/3 animate-pulse" />
-            </div>
-          </div>
-        </div>
       ) : (
         /* Clean Generic Landing Page / Desk Standby Workspace */
         <div className="flex-1 flex flex-col items-center justify-center p-6 max-w-4xl mx-auto w-full">
