@@ -115,13 +115,22 @@ function OverviewView({ data }) {
             <span>Key Risk Posture & Market Readings</span>
             <span className="text-[11px] text-[#64748b]">Realized Diagnostics</span>
           </div>
-          <ul className="space-y-2 text-xs text-[#cbd5e1]">
-            {data.readings.bullets.map((b, idx) => (
-              <li key={idx} className="flex items-start gap-2">
-                <span className="text-[#06b6d4] mt-0.5">•</span>
-                <span className="leading-snug">{b}</span>
-              </li>
-            ))}
+          <ul className="space-y-2.5 text-xs text-[#cbd5e1]">
+            {(data?.readings?.bullets || []).map((b, idx) => {
+              const clean = String(b).replace(/\*\*/g, '');
+              const colonIdx = clean.indexOf(':');
+              const tag = colonIdx !== -1 ? clean.substring(0, colonIdx).trim() : 'Signal';
+              const text = colonIdx !== -1 ? clean.substring(colonIdx + 1).trim() : clean;
+
+              return (
+                <li key={idx} className="flex items-start gap-2.5">
+                  <span className="px-1.5 py-0.5 rounded text-[10px] font-mono font-semibold bg-[#181c27] text-[#06b6d4] border border-[#06b6d4]/20 shrink-0 uppercase tracking-wider">
+                    {tag}
+                  </span>
+                  <span className="leading-relaxed text-[#cbd5e1]">{text}</span>
+                </li>
+              );
+            })}
           </ul>
         </div>
 

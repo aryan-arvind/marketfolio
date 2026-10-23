@@ -32,14 +32,12 @@ READINGS_CONFIG = {
 def get_trend_reading(stl_res: Any) -> str:
     """Returns a one-line desk takeaway on price trend vs cyclical noise."""
     f_t = stl_res.trend_strength_f_t
-    f_s = stl_res.seasonal_strength_f_s
-
     if f_t >= READINGS_CONFIG["trend_strong_threshold"]:
-        return f"Dominant persistent macro trend ({f_t:.2f} trend strength); cyclical noise is secondary."
+        return f"Persistent upward long-term trend (strength score {f_t:.2f}); short-term daily fluctuations are secondary to the broader direction."
     elif f_t >= 0.30:
-        return f"Moderate directional drift ({f_t:.2f} trend strength) with noticeable local consolidation."
+        return f"Moderate directional movement (strength score {f_t:.2f}) with periods of sideways consolidation."
     else:
-        return f"Range-bound price action with weak directional persistence ({f_t:.2f} trend strength)."
+        return f"Sideways range-bound movement with weak directional momentum (strength score {f_t:.2f})."
 
 
 def get_volatility_regime(vol_res: Any, horizon: int) -> tuple[str, str, str]:
@@ -61,22 +59,22 @@ def get_volatility_regime(vol_res: Any, horizon: int) -> tuple[str, str, str]:
         status = "Low Volatility"
         chip_class = "mf-badge-live"
         reading = (
-            f"Volatility is subdued (ranked at {pctile:.0f}th historical percentile); "
-            f"{horizon}D forecast projects {point:.1f}% [{low_bound:.0f}%–{high_bound:.0f}%]."
+            f"Volatility is calm (ranked at {pctile:.0f}th historical percentile). "
+            f"The {horizon}-day risk forecast projects volatility between {low_bound:.0f}% and {high_bound:.0f}%."
         )
     elif pctile > READINGS_CONFIG["vol_percentile_high"]:
         status = "High Volatility"
         chip_class = "mf-badge-stale"
         reading = (
-            f"Volatility is elevated (ranked at {pctile:.0f}th historical percentile); "
-            f"{horizon}D forecast projects {point:.1f}% [{low_bound:.0f}%–{high_bound:.0f}%]."
+            f"Volatility is elevated (ranked at {pctile:.0f}th historical percentile). "
+            f"The {horizon}-day risk forecast projects volatility between {low_bound:.0f}% and {high_bound:.0f}%."
         )
     else:
         status = "Moderate Volatility"
         chip_class = "mf-badge-teal"
         reading = (
-            f"Volatility is near historical median ({pctile:.0f}th percentile); "
-            f"{horizon}D forecast projects {point:.1f}% [{low_bound:.0f}%–{high_bound:.0f}%]."
+            f"Volatility is near its historical normal ({pctile:.0f}th percentile). "
+            f"The {horizon}-day risk forecast projects volatility between {low_bound:.0f}% and {high_bound:.0f}%."
         )
 
     return status, chip_class, reading
@@ -92,21 +90,21 @@ def get_market_sensitivity_reading(market_res: Any, bench_name: str) -> str:
     alpha_p = market_res.arma_alpha_pvalue
 
     if beta < READINGS_CONFIG["beta_defensive"]:
-        beta_desc = f"defensive market posture (beta {beta:.2f}x vs {bench_name})"
+        beta_desc = f"defensive profile (moves less than the market, beta {beta:.2f}x vs {bench_name})"
     elif beta > READINGS_CONFIG["beta_aggressive"]:
-        beta_desc = f"high market gearing (beta {beta:.2f}x vs {bench_name})"
+        beta_desc = f"high market sensitivity (moves more aggressively than the market, beta {beta:.2f}x vs {bench_name})"
     else:
-        beta_desc = f"near-parallel market alignment (beta {beta:.2f}x vs {bench_name})"
+        beta_desc = f"moves closely in tandem with the market (beta {beta:.2f}x vs {bench_name})"
 
     if alpha_p < READINGS_CONFIG["alpha_alpha_sig_pvalue"]:
         if alpha_pa > 0:
-            alpha_desc = f"statistically significant positive alpha (+{alpha_pa:.1f}% p.a.)"
+            alpha_desc = f"delivers measurable excess return (+{alpha_pa:.1f}% p.a.)"
         else:
-            alpha_desc = f"statistically significant negative drag ({alpha_pa:.1f}% p.a.)"
+            alpha_desc = f"shows negative return drag ({alpha_pa:.1f}% p.a.)"
     else:
-        alpha_desc = "excess returns statistically indistinguishable from zero"
+        alpha_desc = "performance is driven purely by broad market exposure"
 
-    return f"Displays {beta_desc}; {alpha_desc} after autocorrelated disturbance adjustment."
+    return f"Displays a {beta_desc}; {alpha_desc}."
 
 
 def get_predictability_reading(arma_res: Any) -> str:
@@ -114,10 +112,10 @@ def get_predictability_reading(arma_res: Any) -> str:
     if arma_res.is_predictable:
         p, d, q = arma_res.best_order
         return (
-            f"Serial return structure detected: ARIMA({p},{d},{q}) improves AICc by "
-            f"{abs(arma_res.best_model.aicc - arma_res.constant_model.aicc):.1f} over a random walk."
+            f"Mild short-term pattern detected: ARIMA({p},{d},{q}) slightly improves "
+            f"forecast accuracy over a simple random-walk guess."
         )
-    return "Returns behave as a martingale day to day; past price patterns offer no systematic directional edge."
+    return "Daily price changes are near-random (Random Walk). Past price patterns alone offer no easy directional trading signal."
 
 
 def get_macro_drivers_reading(var_res: Any) -> str:
@@ -128,8 +126,8 @@ def get_macro_drivers_reading(var_res: Any) -> str:
     causal = [g.causing_variable for g in var_res.granger_tests if g.is_causal_05]
     if causal:
         factors = ", ".join(causal)
-        return f"Lead-lag transmission active: {factors} Granger-lead domestic benchmark movements."
-    return "Domestic benchmark price formation operates independently of short-term external macro lags."
+        return f"Global macro transmission detected: movements in {factors} actively lead domestic market direction."
+    return "Domestic price action moves independently of short-term external global macro factors."
 
 
 def get_data_quality_reading(clean_res: Any, meta: dict[str, Any]) -> str:
@@ -140,18 +138,18 @@ def get_data_quality_reading(clean_res: Any, meta: dict[str, Any]) -> str:
 
     if n_anomalies > 0:
         return (
-            f"Ingested {clean_res.n_cleaned_obs} sessions via {status_str}; "
-            f"{n_anomalies} extreme return session(s) flagged (|r| > 15%)."
+            f"Ingested {clean_res.n_cleaned_obs} trading sessions via {status_str}; "
+            f"{n_anomalies} single-day extreme market shock session(s) flagged (|return| > 15%)."
         )
-    return f"Clean sample of {clean_res.n_cleaned_obs} aligned sessions via {status_str} with zero data disruptions."
+    return f"Clean sample of {clean_res.n_cleaned_obs} continuous trading sessions via {status_str} with zero data disruptions."
 
 
 def get_calendar_reading(cal_res: Any) -> str:
     """Returns a verdict on day-of-week and monthly anomalies."""
     if cal_res.is_day_of_week_significant:
         return (
-            f"Measurable calendar asymmetry: weekday return distributions differ significantly "
-            f"(joint F p={cal_res.ols_f_pvalue:.4f})."
+            f"Measurable calendar differences: weekday returns show statistically distinct behavior "
+            f"(F-test p = {cal_res.ols_f_pvalue:.4f})."
         )
     return "Calendar return distributions are statistically uniform across weekdays and months."
 
@@ -161,44 +159,38 @@ def get_backtest_reading(eval_res: Any) -> str:
     imprv = eval_res.model_metrics.mase_improvement_pct
     if imprv > 0:
         return (
-            f"Outperforms competing random-walk and rolling-mean baselines "
-            f"across {eval_res.n_origins_evaluated} expanding origins ({imprv:.1f}% MASE improvement)."
+            f"Outperforms a simple random-walk guess across {eval_res.n_origins_evaluated} "
+            f"unseen backtest windows ({imprv:.1f}% forecast error improvement)."
         )
     return (
-        f"Model accuracy tracks close to the naive random-walk baseline "
+        f"Forecast accuracy is comparable to a naive random-walk baseline "
         f"across {eval_res.n_origins_evaluated} expanding backtest windows."
     )
 
 
 def get_overview_bullet_list(data: dict[str, Any]) -> list[str]:
-    """Assembles the 5-6 core institutional takeaways for the Overview Key Readings card."""
+    """Assembles clean institutional takeaways for the Overview Key Readings card."""
     horizon = data.get("vol_res").horizon_days if data.get("vol_res") else 30
     bench_name = data.get("meta", {}).get("benchmark_name", "^NSEI")
 
     bullets = []
-    # 1. Trend
     if data.get("stl_res"):
-        bullets.append(f"**Trend**: {get_trend_reading(data['stl_res'])}")
+        bullets.append(f"Trend: {get_trend_reading(data['stl_res'])}")
 
-    # 2. Volatility Regime
     if data.get("vol_res"):
         _, _, vol_read = get_volatility_regime(data["vol_res"], horizon)
-        bullets.append(f"**Volatility**: {vol_read}")
+        bullets.append(f"Volatility: {vol_read}")
 
-    # 3. Market Sensitivity
     if data.get("market_res"):
-        bullets.append(f"**Market Sensitivity**: {get_market_sensitivity_reading(data['market_res'], bench_name)}")
+        bullets.append(f"Market Sensitivity: {get_market_sensitivity_reading(data['market_res'], bench_name)}")
 
-    # 4. Predictability
     if data.get("arma_search"):
-        bullets.append(f"**Predictability**: {get_predictability_reading(data['arma_search'])}")
+        bullets.append(f"Predictability: {get_predictability_reading(data['arma_search'])}")
 
-    # 5. Macro Drivers
     if data.get("var_res"):
-        bullets.append(f"**Macro Transmission**: {get_macro_drivers_reading(data['var_res'])}")
+        bullets.append(f"Macro Transmission: {get_macro_drivers_reading(data['var_res'])}")
 
-    # 6. Data Quality
     if data.get("clean_res"):
-        bullets.append(f"**Data Integrity**: {get_data_quality_reading(data['clean_res'], data.get('meta', {}))}")
+        bullets.append(f"Data Integrity: {get_data_quality_reading(data['clean_res'], data.get('meta', {}))}")
 
     return bullets
