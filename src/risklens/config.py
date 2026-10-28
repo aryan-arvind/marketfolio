@@ -73,6 +73,35 @@ EVAL_INITIAL_WINDOW: Final[int] = 756
 EVAL_STEP_SIZE: Final[int] = 21
 EVAL_MAX_ORIGINS: Final[int] = 36
 
+# Advanced Machine Learning Parameters
+ML_LOOKBACK_WINDOW: Final[int] = 20
+ML_TRAIN_RATIO: Final[float] = 0.70
+ML_VAL_RATIO: Final[float] = 0.15
+ML_TEST_RATIO: Final[float] = 0.15
+ML_RANDOM_SEED: Final[int] = 42
+
+# VAE Anomaly Detection
+VAE_LATENT_DIM: Final[int] = 4
+VAE_HIDDEN_DIM: Final[int] = 64
+VAE_EPOCHS: Final[int] = 40
+VAE_LEARNING_RATE: Final[float] = 0.002
+VAE_ANOMALY_PERCENTILE: Final[float] = 95.0
+
+# Transformer Volatility Regime Classification
+TRANSFORMER_D_MODEL: Final[int] = 64
+TRANSFORMER_NHEAD: Final[int] = 4
+TRANSFORMER_LAYERS: Final[int] = 2
+TRANSFORMER_DIM_FEEDFORWARD: Final[int] = 128
+TRANSFORMER_EPOCHS: Final[int] = 35
+TRANSFORMER_LEARNING_RATE: Final[float] = 0.001
+TRANSFORMER_DROPOUT: Final[float] = 0.1
+
+# Graph Convolutional Network (GCN) Multi-Asset
+GCN_HIDDEN_DIM: Final[int] = 32
+GCN_EPOCHS: Final[int] = 40
+GCN_LEARNING_RATE: Final[float] = 0.005
+GCN_CORR_THRESHOLD: Final[float] = 0.25
+
 
 def setup_logging(
     log_file: Path | None = None,

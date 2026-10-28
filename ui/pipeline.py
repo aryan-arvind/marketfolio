@@ -1,7 +1,11 @@
 """
 MarketFolio Pipeline Runner.
-Houses the core execute_analysis_pipeline function moved verbatim from streamlit_app.py.
-Preserves exact signature, computation, model settings, and return dictionary.
+Coordinates data ingestion, cleaning, stationarity tests, volatility forecasting,
+and Advanced Deep Learning models:
+- Variational Autoencoder (VAE) Anomaly Engine
+- Transformer Volatility Regime Classifier
+- Inter-Market Graph Convolutional Network (GCN)
+- Decoupled Trello Research Workflow Tracker
 """
 
 from __future__ import annotations
@@ -24,14 +28,25 @@ from risklens.diagnostics import (
     run_stationarity_suite,
 )
 from risklens.evaluation import run_rolling_origin_evaluation
+from risklens.gcn_relational import train_and_evaluate_intermarket_gcn
+from risklens.ml_pipeline import (
+    build_multivariate_feature_matrix,
+    construct_volatility_regime_targets,
+    create_chronological_splits,
+)
 from risklens.narrator import generate_narrative
 from risklens.regression_arma import fit_regression_arma
 from risklens.seasonality import (
     analyze_calendar_effects,
     run_stl_decomposition,
 )
+from risklens.transformer_regime import train_and_evaluate_transformer_regime
+from risklens.trello_tracker import fetch_trello_research_board
+from risklens.vae_anomaly import train_and_evaluate_vae_anomaly
 from risklens.var_analysis import run_var_analysis
 from risklens.volatility import forecast_volatility
+
+logger = logging.getLogger("risklens")
 
 
 def execute_analysis_pipeline(
@@ -44,8 +59,8 @@ def execute_analysis_pipeline(
     status_box: Any = None,
 ) -> dict[str, Any]:
     """
-    Executes quantitative analysis pipeline with live step reporting.
-    Executes data retrieval, cleaning, statistical modeling, and backtesting.
+    Executes the full MarketFolio quantitative and machine learning analytics pipeline.
+    Combines classical econometrics with verified deep neural models (VAE, Transformer, GCN).
     """
     warnings_list: list[str] = []
 
@@ -81,7 +96,7 @@ def execute_analysis_pipeline(
     lb_sq_returns = compute_ljung_box(returns ** 2, lags=[10, 20])
 
     if status_box:
-        status_box.write("Step 2/5: Fitting conditional mean ARMA & calendar tendencies...")
+        status_box.write("Step 2/5: Fitting conditional mean ARMA & realized volatility cones...")
 
     # 3. Calendar Tendencies & Decomposition
     cal_res = analyze_calendar_effects(returns, display_name)
@@ -90,14 +105,8 @@ def execute_analysis_pipeline(
     # 4. Conditional Mean ARMA (max_p=2, max_q=2 for rapid convergence)
     arma_search = grid_search_arma(returns, display_name, d=0, max_p=2, max_q=2)
 
-    if status_box:
-        status_box.write("Step 3/5: Estimating realized volatility cone & bootstrap simulation...")
-
     # 5. Volatility Modeling & Bootstrap Forecast
     vol_res = forecast_volatility(returns, display_name, horizon=horizon)
-
-    if status_box:
-        status_box.write("Step 4/5: Computing market beta & global macro transmission (VAR)...")
 
     # 6. Benchmark Sensitivity Regression
     bench_clean = None
@@ -109,7 +118,7 @@ def execute_analysis_pipeline(
     except Exception as exc:
         warnings_list.append(f"Benchmark regression vs {benchmark_symbol} skipped: {exc}")
 
-    # 7. Global Macro VAR System
+    # 7. Global Macro Series Ingestion
     macro_dict, _ = fetch_all_macro_series(force_refresh=force_refresh)
     aligned_macro, macro_valid, macro_reason = align_macro_series(macro_dict)
     var_res = None
@@ -119,9 +128,72 @@ def execute_analysis_pipeline(
             var_res = v_res
 
     if status_box:
-        status_box.write("Step 5/5: Running rolling-origin out-of-sample backtest...")
+        status_box.write("Step 3/5: Calibrating Deep VAE Anomaly Engine...")
 
-    # 8. Out-of-Sample Rolling-Origin Backtesting
+    # 8. Advanced ML Pipeline: Features & Leakage-Free Chronological Splits
+    features_df = build_multivariate_feature_matrix(
+        price_series=prices,
+        return_series=returns,
+        macro_df=aligned_macro if macro_valid else None,
+    )
+
+    # Pre-aligns features and forward targets, calibrates thresholds on train only, enforces H-day embargo
+    splits, thresholds = prepare_ml_dataset(
+        features_df=features_df,
+        return_series=returns,
+        horizon=horizon,
+    )
+
+    # 9. Train & Evaluate Deep VAE Anomaly Engine
+    vae_res = None
+    try:
+        vae_res = train_and_evaluate_vae_anomaly(
+            splits=splits,
+            price_series=prices,
+            return_series=returns,
+            lookback=15,
+            epochs=35,
+        )
+    except Exception as exc:
+        logger.error("VAE training error: %s", exc)
+        warnings_list.append(f"VAE Anomaly Engine skipped: {exc}")
+
+    if status_box:
+        status_box.write("Step 4/5: Calibrating Transformer Volatility Regime Classifier...")
+
+    # 10. Train & Evaluate Volatility Transformer Encoder
+    transformer_res = None
+    try:
+        transformer_res = train_and_evaluate_transformer_regime(
+            splits=splits,
+            return_series=returns,
+            horizon=horizon,
+            lookback=20,
+            epochs=30,
+        )
+    except Exception as exc:
+        logger.error("Transformer training error: %s", exc)
+        warnings_list.append(f"Transformer Volatility Classifier skipped: {exc}")
+
+    # 11. Train & Evaluate Inter-Market GCN
+    gcn_res = None
+    try:
+        if macro_valid and macro_dict:
+            gcn_res = train_and_evaluate_intermarket_gcn(
+                primary_series=prices,
+                primary_name=display_name,
+                macro_dict=macro_dict,
+                horizon=horizon,
+                epochs=35,
+            )
+    except Exception as exc:
+        logger.error("GCN training error: %s", exc)
+        warnings_list.append(f"Inter-Market GCN skipped: {exc}")
+
+    if status_box:
+        status_box.write("Step 5/5: Running rolling-origin out-of-sample backtest & assembling scorecard...")
+
+    # 12. Out-of-Sample Rolling-Origin Backtesting (ARIMA/SARIMAX Volatility)
     eval_res = run_rolling_origin_evaluation(
         series=vol_res.log_vol_series,
         target_name=f"{display_name} Volatility",
@@ -130,12 +202,16 @@ def execute_analysis_pipeline(
         max_origins=max_origins,
     )
 
-    # 9. Assembled Results Structure
+    # 13. Trello Research Workflow Tracker
+    trello_res = fetch_trello_research_board()
+
+    # 14. Assembled Results Structure
     first_lb_p = (
         float(arma_search.best_model.lb_df.iloc[0]["lb_pvalue"])
         if len(arma_search.best_model.lb_df) > 0
         else 0.0
     )
+
     assembled_results = {
         "asset_metadata": {
             "name": display_name,
@@ -192,6 +268,54 @@ def execute_analysis_pipeline(
             "rolling_mean_forecast_pct": vol_res.rolling_mean_forecast_pct,
             "bootstrap_fallback_used": vol_res.boot_failed_or_fallback,
         },
+        "vae_anomaly": (
+            {
+                "available": True,
+                "reconstruction_threshold": vae_res.reconstruction_threshold,
+                "n_anomalies_detected": vae_res.n_anomalies_detected,
+                "anomaly_rate_pct": vae_res.anomaly_rate_pct,
+                "top_anomalies": vae_res.top_anomalies,
+                "interpretation": vae_res.interpretation,
+                "baseline_scorecard": vae_res.baseline_scorecard.to_dict(orient="records"),
+                "model_summary": vae_res.model_summary,
+            }
+            if vae_res
+            else {"available": False}
+        ),
+        "transformer_regime": (
+            {
+                "available": True,
+                "accuracy": transformer_res.accuracy,
+                "balanced_accuracy": transformer_res.balanced_accuracy,
+                "macro_f1": transformer_res.macro_f1,
+                "log_loss": transformer_res.log_loss_val,
+                "confusion_matrix": transformer_res.confusion_matrix,
+                "verdict": transformer_res.verdict,
+                "interpretation": transformer_res.interpretation,
+                "scorecard": transformer_res.scorecard_df.to_dict(orient="records"),
+                "thresholds": {
+                    "low_cutoff": transformer_res.thresholds.low_cutoff,
+                    "high_cutoff": transformer_res.thresholds.high_cutoff,
+                },
+                "mean_attention_weights": transformer_res.mean_attention_weights,
+            }
+            if transformer_res
+            else {"available": False}
+        ),
+        "gcn_relational": (
+            {
+                "available": gcn_res.available,
+                "nodes": gcn_res.nodes,
+                "node_vulnerability_scores": gcn_res.node_vulnerability_scores,
+                "systemic_stress_accuracy": gcn_res.systemic_stress_accuracy,
+                "systemic_stress_f1": gcn_res.systemic_stress_f1,
+                "baseline_accuracy": gcn_res.baseline_accuracy,
+                "baseline_f1": gcn_res.baseline_f1,
+                "interpretation": gcn_res.interpretation,
+            }
+            if gcn_res and gcn_res.available
+            else {"available": False, "reason": getattr(gcn_res, "reason", "Macro data not aligned")}
+        ),
         "market_model": (
             {
                 "benchmark_name": market_res.benchmark_name,
@@ -242,6 +366,7 @@ def execute_analysis_pipeline(
             "verdict": eval_res.summary_verdict,
         },
         "flagged_anomalies": clean_res.flagged_anomalies.to_dict(orient="records"),
+        "trello": trello_res,
     }
 
     narrative = generate_narrative(assembled_results, use_llm=False)
@@ -263,6 +388,11 @@ def execute_analysis_pipeline(
         "bench_returns": bench_clean.log_return_series if bench_clean else None,
         "var_res": var_res,
         "eval_res": eval_res,
+        "splits": splits,
+        "vae_res": vae_res,
+        "transformer_res": transformer_res,
+        "gcn_res": gcn_res,
+        "trello_res": trello_res,
         "narrative": narrative,
         "assembled_results": assembled_results,
     }

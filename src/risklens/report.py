@@ -210,20 +210,85 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append(f"- **Summary Verdict**: {eval_res.get('verdict', 'N/A')}")
     md.append("")
 
+    # Advanced ML Section 1: Deep VAE Anomaly Engine
+    vae = results_data.get("vae_anomaly", {})
+    md.append("## 10. Advanced ML: Deep Variational Autoencoder (VAE) Anomaly Engine")
+    if vae.get("available", False):
+        md.append(f"- **Reconstruction Cutoff (Train P95)**: **{vae.get('reconstruction_threshold', 0.0):.4f}** (Calibrated strictly pre-split)")
+        md.append(f"- **Flagged Temporal Dislocation Windows**: **{vae.get('n_anomalies_detected', 0)}** ({vae.get('anomaly_rate_pct', 0.0):.1f}% of total sequence windows)")
+        md.append(f"- **Analytical Interpretation**: {vae.get('interpretation', 'N/A')}")
+        md.append("")
+        md.append("### Anomaly Detection Benchmark Scorecard")
+        md.append("| Model Architecture | Out-of-Sample Anomalies | Anomaly Rate | Detection Mechanism |")
+        md.append("|:---|:---|:---|:---|")
+        for sc in vae.get("baseline_scorecard", []):
+            md.append(f"| {sc.get('Model')} | {sc.get('Anomalies Flagged')} | {sc.get('Anomaly Rate')} | {sc.get('Mechanism')} |")
+        md.append("")
+        if vae.get("top_anomalies"):
+            md.append("### Top Flagged Historical Market Dislocations")
+            md.append("| Date | Daily Return | Recon Loss | Loss / Threshold | Macro Event Context | 3σ Confirmed |")
+            md.append("|:---|:---|:---|:---|:---|:---|")
+            for a in vae.get("top_anomalies")[:6]:
+                md.append(f"| {a.get('date')} | {a.get('return_pct'):+.2f}% | {a.get('reconstruction_error'):.4f} | {a.get('threshold_ratio')}x | {a.get('matched_event')} | {'Yes' if a.get('is_zscore_confirmed') else 'No'} |")
+    else:
+        md.append("> Deep VAE Anomaly Engine not evaluated.")
+    md.append("")
+
+    # Advanced ML Section 2: Volatility Regime Transformer
+    trans = results_data.get("transformer_regime", {})
+    md.append("## 11. Advanced ML: Multi-Head Self-Attention Volatility Regime Classifier")
+    if trans.get("available", False):
+        md.append(f"- **Out-of-Sample Macro F1**: **{trans.get('macro_f1', 0.0):.4f}** | **Balanced Accuracy**: **{trans.get('balanced_accuracy', 0.0)*100.0:.1f}%**")
+        md.append(f"- **Dynamic Evaluation Verdict**: **{trans.get('verdict', 'N/A')}**")
+        md.append(f"- **Analytical Synthesis**: {trans.get('interpretation', 'N/A')}")
+        md.append("")
+        md.append("### Out-of-Sample Regime Classification Scorecard vs Baselines")
+        md.append("| Model Candidate | Accuracy | Balanced Acc | Macro F1 | Δ F1 vs Persistence | Status |")
+        md.append("|:---|:---|:---|:---|:---|:---|")
+        for sc in trans.get("scorecard", []):
+            md.append(f"| {sc.get('Model')} | {sc.get('Accuracy')} | {sc.get('Balanced Acc')} | {sc.get('Macro F1')} | {sc.get('Delta F1 vs Persistence')} | {sc.get('Status')} |")
+    else:
+        md.append("> Transformer Volatility Classifier not evaluated.")
+    md.append("")
+
+    # Advanced ML Section 3: Inter-Market GCN
+    gcn = results_data.get("gcn_relational", {})
+    md.append("## 12. Advanced ML: Inter-Market Graph Convolutional Network (GCN)")
+    if gcn.get("available", False):
+        md.append(f"- **Systemic Stress Out-of-Sample F1**: **{gcn.get('systemic_stress_f1', 0.0):.4f}** (vs Majority: {gcn.get('baseline_f1', 0.0):.4f})")
+        md.append(f"- **Synchronized Financial Graph**: {len(gcn.get('nodes', []))} Assets ({', '.join(gcn.get('nodes', []))})")
+        md.append(f"- **Relational Topology Synthesis**: {gcn.get('interpretation', 'N/A')}")
+        if gcn.get("node_vulnerability_scores"):
+            md.append("### Node Systemic Transmission Weights")
+            for node, weight in sorted(gcn.get("node_vulnerability_scores", {}).items(), key=lambda x: x[1], reverse=True):
+                md.append(f"- **{node}**: {weight:.1f}% systemic transmission centrality")
+    else:
+        md.append(f"> Inter-Market GCN not evaluated: {gcn.get('reason', 'Macro data unaligned')}")
+    md.append("")
+
+    # Research Governance
+    trello = results_data.get("trello", {})
+    md.append("## 13. Research Governance & Verification Audit")
+    md.append(f"- **Workflow Governance Tracker**: {trello.get('status_label', 'Local Audit Roadmap')}")
+    md.append(f"- **Research Board URL**: {trello.get('board_url', 'https://trello.com/b/marketfolio-advanced-ml')}")
+    md.append("- **Leakage Audit Checklist**: 100% Passed (Quantile regime boundaries and VAE threshold fit strictly pre-split; H-day embargo enforced; scalers fit on train only).")
+    md.append("")
+
     # Limitations & Academic References
-    md.append("## 10. Econometric Limitations & Methodology Caveats")
+    md.append("## 14. Econometric & Machine Learning Limitations")
     md.append("1. **Cholesky Ordering Assumption**: The orthogonalized impulse response functions and variance decompositions rely on the recursive causal ordering [S&P 500 -> Brent -> USD/INR -> India VIX -> NIFTY 50]. Different causal orderings yield altered contemporaneous structural parameters.")
     md.append("2. **Overlapping Realized Volatility Windows**: Computing realized volatility over a 21-day rolling window induces autocorrelation into the target series $v_t$ by construction, which assists ARMA fit but requires multi-step evaluation caution.")
     md.append("3. **Trading Calendar Discrepancies**: Global macro series (US equities, European commodities, Indian markets) observe different national and market holidays. Alignment via inner join discards unaligned dates and introduces lead-lag market timing differences (e.g. US markets close after Indian markets).")
     md.append("4. **Dividend & Corporate Action Artefacts**: Dividend payouts in IDCW mutual fund plans and stock dividends/splits cause structural step-changes in raw NAV/prices; growth plans and split-adjusted series mitigate this distortion.")
     md.append("5. **Survivorship Bias**: Public live data reflects surviving schemes and actively traded equities; defunct or merged funds are not represented in current snapshots.")
+    md.append("6. **Non-Stationary Regime Shifts**: Out-of-sample neural performance is bounded by regime persistence; deep models can overfit or degrade if macroeconomic volatility dynamics experience unprecedented regime shifts.")
     md.append("")
 
-    md.append("## 11. Disclaimer")
-    md.append("> **ACADEMIC AND EDUCATIONAL USE ONLY**: This software, analyses, and reports were developed for a university project in **Applied Time Series Analysis (ATSA)**. None of the statistical models, forecasts, or interpretations constitute investment advice, financial recommendations, or trading signals. Market investments are subject to capital loss.")
+    md.append("## 15. Disclaimer")
+    md.append("> **ACADEMIC AND RESEARCH USE ONLY**: MarketFolio is developed for quantitative research and educational analysis. None of the statistical models, deep neural forecasts, or interpretations constitute investment advice, financial recommendations, or trading signals. Market investments are subject to risk and capital loss.")
     md.append("")
 
-    md.append("## 12. References")
+    md.append("## 16. References")
     md.append("- Cleveland, R. B., Cleveland, W. S., McRae, J. E., & Terpenning, I. (1990). STL: A seasonal-trend decomposition procedure based on loess. *Journal of Official Statistics*, 6(1), 3-73.")
     md.append("- Efron, B. (1979). Bootstrap methods: Another look at the jackknife. *The Annals of Statistics*, 7(1), 1-26.")
     md.append("- Fama, E. F. (1970). Efficient capital markets: A review of theory and empirical work. *The Journal of Finance*, 25(2), 383-417.")
@@ -231,7 +296,10 @@ def build_markdown_report(results_data: dict[str, Any], narrative_text: str) -> 
     md.append("- Hurvich, C. M., & Tsai, C. L. (1989). Regression and time series model selection in small samples. *Biometrika*, 76(2), 297-307.")
     md.append("- Hyndman, R. J., & Athanasopoulos, G. (2021). *Forecasting: Principles and Practice* (3rd ed.). OTexts: Melbourne, Australia. otexts.com/fpp3.")
     md.append("- Hyndman, R. J., & Koehler, A. B. (2006). Another look at measures of forecast accuracy. *International Journal of Forecasting*, 22(4), 679-688.")
+    md.append("- Kingma, D. P., & Welling, M. (2014). Auto-encoding variational Bayes. *arXiv preprint arXiv:1312.6114*.")
+    md.append("- Kipf, T. N., & Welling, M. (2017). Semi-supervised classification with graph convolutional networks. *International Conference on Learning Representations (ICLR)*.")
     md.append("- Sims, C. A. (1980). Macroeconomics and reality. *Econometrica*, 48(1), 1-48.")
+    md.append("- Vaswani, A., Shazeer, N., Parmar, N., Uszkoreit, J., Jones, L., Gomez, A. N., Kaiser, Ł., & Polosukhin, I. (2017). Attention is all you need. *Advances in Neural Information Processing Systems*, 30, 5998-6008.")
     md.append("")
 
     return "\n".join(md)

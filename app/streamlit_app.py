@@ -32,13 +32,18 @@ import ui.components
 import ui.readings
 import ui.theme
 from ui.pages import (
+    classical_diagnostics,
     forecast_accuracy,
+    gcn_page,
     market_macro,
     methodology,
     overview,
     price_trend,
     report,
     returns_predictability,
+    transformer_page,
+    trello_page,
+    vae_page,
     volatility_risk,
 )
 
@@ -48,11 +53,12 @@ importlib.reload(ui.charts)
 importlib.reload(ui.components)
 importlib.reload(ui.readings)
 importlib.reload(overview)
-importlib.reload(price_trend)
-importlib.reload(returns_predictability)
+importlib.reload(vae_page)
+importlib.reload(transformer_page)
+importlib.reload(gcn_page)
 importlib.reload(volatility_risk)
-importlib.reload(market_macro)
-importlib.reload(forecast_accuracy)
+importlib.reload(classical_diagnostics)
+importlib.reload(trello_page)
 importlib.reload(report)
 importlib.reload(methodology)
 
@@ -170,15 +176,16 @@ if current_data:
         for w in current_data["warnings"]:
             render_notice_card(title="Pipeline Advisory", message=w, level="warning")
 
-    # 3. 8 Financial Desk Tabs
+    # 3. Evolved Financial & Machine Learning Desk Tabs
     tabs = st.tabs([
         "Overview",
-        "Price & Trend",
-        "Returns & Predictability",
-        "Volatility & Risk",
-        "Market & Macro",
-        "Forecast Accuracy",
-        "Report",
+        "Deep Anomaly (VAE)",
+        "Volatility Regimes (Transformer)",
+        "Inter-Market Topology (GCN)",
+        "Realized Volatility Cone",
+        "Classical Econometrics",
+        "Research Tracker (Trello)",
+        "Research Report",
         "Methodology",
     ])
 
@@ -190,41 +197,47 @@ if current_data:
 
     with tabs[1]:
         try:
-            price_trend.render(current_data)
+            vae_page.render(current_data)
         except Exception as exc:
-            render_notice_card("Price & Trend Display Notice", f"Unable to display Price & Trend: {exc}", level="error")
+            render_notice_card("VAE Anomaly Display Notice", f"Unable to display VAE Anomaly Engine: {exc}", level="error")
 
     with tabs[2]:
         try:
-            returns_predictability.render(current_data)
+            transformer_page.render(current_data)
         except Exception as exc:
-            render_notice_card("Returns & Predictability Display Notice", f"Unable to display Returns & Predictability: {exc}", level="error")
+            render_notice_card("Transformer Display Notice", f"Unable to display Volatility Transformer: {exc}", level="error")
 
     with tabs[3]:
         try:
-            volatility_risk.render(current_data)
+            gcn_page.render(current_data)
         except Exception as exc:
-            render_notice_card("Volatility & Risk Display Notice", f"Unable to display Volatility & Risk: {exc}", level="error")
+            render_notice_card("GCN Display Notice", f"Unable to display Inter-Market GCN: {exc}", level="error")
 
     with tabs[4]:
         try:
-            market_macro.render(current_data)
+            volatility_risk.render(current_data)
         except Exception as exc:
-            render_notice_card("Market & Macro Display Notice", f"Unable to display Market & Macro: {exc}", level="error")
+            render_notice_card("Volatility Cone Display Notice", f"Unable to display Volatility Cone: {exc}", level="error")
 
     with tabs[5]:
         try:
-            forecast_accuracy.render(current_data)
+            classical_diagnostics.render(current_data)
         except Exception as exc:
-            render_notice_card("Forecast Accuracy Display Notice", f"Unable to display Forecast Accuracy: {exc}", level="error")
+            render_notice_card("Classical Diagnostics Notice", f"Unable to display Classical Diagnostics: {exc}", level="error")
 
     with tabs[6]:
+        try:
+            trello_page.render(current_data)
+        except Exception as exc:
+            render_notice_card("Trello Tracker Notice", f"Unable to display Trello Tracker: {exc}", level="error")
+
+    with tabs[7]:
         try:
             report.render(current_data)
         except Exception as exc:
             render_notice_card("Report Display Notice", f"Unable to display Report: {exc}", level="error")
 
-    with tabs[7]:
+    with tabs[8]:
         try:
             methodology.render(current_data)
         except Exception as exc:

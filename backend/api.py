@@ -390,7 +390,78 @@ def analyze_asset(req: AnalysisRequest):
         "bullets": readings.get_overview_bullet_list(raw),
     }
 
-    # 10. Research Report Markdown
+    # 10. Advanced ML Models Serialization
+    vae_obj = raw.get("vae_res")
+    vae_data = {}
+    if vae_obj:
+        tl_sample = vae_obj.timeline_df.copy()
+        # Subsample timeline to 400 points max for efficient frontend network payload
+        step = max(1, len(tl_sample) // 400)
+        tl_sub = tl_sample.iloc[::step]
+        vae_data = {
+            "available": True,
+            "threshold": _safe_float(vae_obj.reconstruction_threshold),
+            "n_anomalies": int(vae_obj.n_anomalies_detected),
+            "anomaly_rate_pct": _safe_float(vae_obj.anomaly_rate_pct),
+            "interpretation": vae_obj.interpretation,
+            "timeline": [
+                {
+                    "date": str(r["date"]),
+                    "error": _safe_float(r["vae_recon_error"]),
+                    "is_anomaly": bool(r["is_vae_anomaly"]),
+                    "z1": _safe_float(r["latent_z1"]),
+                    "z2": _safe_float(r["latent_z2"]),
+                }
+                for _, r in tl_sub.iterrows()
+            ],
+            "top_anomalies": vae_obj.top_anomalies,
+            "scorecard": vae_obj.baseline_scorecard.to_dict(orient="records"),
+            "model_summary": vae_obj.model_summary,
+        }
+    else:
+        vae_data = {"available": False}
+
+    trans_obj = raw.get("transformer_res")
+    trans_data = {}
+    if trans_obj:
+        trans_data = {
+            "available": True,
+            "accuracy": _safe_float(trans_obj.accuracy * 100.0),
+            "balanced_accuracy": _safe_float(trans_obj.balanced_accuracy * 100.0),
+            "macro_f1": _safe_float(trans_obj.macro_f1),
+            "verdict": trans_obj.verdict,
+            "interpretation": trans_obj.interpretation,
+            "confusion_matrix": trans_obj.confusion_matrix,
+            "attention_weights": [_safe_float(w) for w in trans_obj.mean_attention_weights],
+            "scorecard": trans_obj.scorecard_df.to_dict(orient="records"),
+            "thresholds": {
+                "low": _safe_float(trans_obj.thresholds.low_cutoff * 100.0),
+                "high": _safe_float(trans_obj.thresholds.high_cutoff * 100.0),
+            },
+        }
+    else:
+        trans_data = {"available": False}
+
+    gcn_obj = raw.get("gcn_res")
+    gcn_data = {}
+    if gcn_obj and gcn_obj.available:
+        gcn_data = {
+            "available": True,
+            "nodes": gcn_obj.nodes,
+            "adjacency_matrix": [[_safe_float(c) for c in row] for row in gcn_obj.adjacency_matrix],
+            "node_vulnerability": {k: _safe_float(v) for k, v in gcn_obj.node_vulnerability_scores.items()},
+            "systemic_accuracy": _safe_float(gcn_obj.systemic_stress_accuracy * 100.0),
+            "systemic_f1": _safe_float(gcn_obj.systemic_stress_f1),
+            "baseline_accuracy": _safe_float(gcn_obj.baseline_accuracy * 100.0),
+            "baseline_f1": _safe_float(gcn_obj.baseline_f1),
+            "interpretation": gcn_obj.interpretation,
+        }
+    else:
+        gcn_data = {"available": False, "reason": getattr(gcn_obj, "reason", "Macro data not aligned")}
+
+    trello_obj = raw.get("trello_res") or {}
+
+    # 11. Research Report Markdown
     report_md = build_markdown_report(raw["assembled_results"], raw["narrative"])
 
     return {
@@ -418,6 +489,10 @@ def analyze_asset(req: AnalysisRequest):
         "econometric_audit": econometric_audit,
         "readings": desk_readings,
         "report_markdown": report_md,
+        "vae_anomaly": vae_data,
+        "transformer_regime": trans_data,
+        "gcn_relational": gcn_data,
+        "trello": trello_obj,
     }
 
 
