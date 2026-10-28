@@ -1,14 +1,13 @@
-# MarketFolio: Real-Data Risk & Macro-Linkage Monitor for Indian Mutual Funds and Equities
+# MarketFolio: Quantitative Risk & Macro-Linkage Engine for Indian Mutual Funds and Equities
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10--3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
-[![Course: ATSA](https://img.shields.io/badge/University%20Project-Applied%20Time%20Series%20Analysis-purple)]()
 
-**MarketFolio** is an end-to-end quantitative time series analysis system designed for Indian mutual funds and equities. Developed as a capstone project for **Applied Time Series Analysis (ATSA)**, it connects directly to live public financial APIs, processes real daily time series, executes rigorous econometric routines, and produces production-grade diagnostic reports, visualizations, and an interactive Streamlit dashboard.
+**MarketFolio** is an end-to-end quantitative time series analysis system and risk monitoring platform designed for Indian mutual funds and equities. It connects directly to live public financial APIs, processes real daily time series, executes econometric routines, and produces diagnostic reports, visualizations, an interactive Streamlit dashboard, and a modern trading terminal.
 
 ---
 
-## 1. What MarketFolio Does
+## 1. Core Analytics
 
 MarketFolio investigates the statistical and economic properties of asset prices and returns across several core dimensions:
 1. **Stationarity & Integration**: Distinguishes stochastic trends from stationary processes using joint ADF and KPSS tests on both log price levels and log returns.
@@ -21,25 +20,25 @@ MarketFolio investigates the statistical and economic properties of asset prices
 
 ---
 
-## 2. ATSA Syllabus Alignment
+## 2. Architecture & Core Modules
 
-The architecture of RiskLens directly maps each module to core units of the Applied Time Series Analysis (ATSA) syllabus:
+The analytics pipeline is structured into decoupled quantitative modules:
 
-| ATSA Syllabus Unit | Core Quantitative Topics | Implementation File | Key Outputs & Diagnostics |
+| Module | Methodology & Core Focus | Implementation File | Key Outputs & Diagnostics |
 |:---|:---|:---|:---|
-| **Unit 1: Introduction to Time Series** | Time series plots, calendar effects, subseries, STL decomposition, feature measures ($F_T, F_S$) | [`src/risklens/seasonality.py`](src/risklens/seasonality.py) | Day-of-week OLS dummy F-test, Kruskal-Wallis test, STL trend/seasonal strength, lag-1 scatter |
-| **Unit 1 & 5: Stationarity & Integration** | Unit root testing, difference vs trend stationarity, autocorrelation (ACF/PACF), Ljung-Box test | [`src/risklens/diagnostics.py`](src/risklens/diagnostics.py) | Joint ADF & KPSS decision synthesis, 40-lag ACF/PACF plots with Bartlett bands, Ljung-Box on $r_t$ and $r_t^2$ |
-| **Unit 3 & 4: ARMA Identification & Estimation** | Model identification, AICc/BIC model selection, maximum likelihood estimation, residual diagnostics | [`src/risklens/arma_models.py`](src/risklens/arma_models.py) | AICc grid search over $p, q \in [0..3]$, Ljung-Box adjusted residual tests, Jarque-Bera, normal Q-Q plots |
-| **Unit 2 & 5: Transfer Functions & Regression with ARMA Errors** | Autocorrelated regression disturbances, Cochrane-Orcutt / SARIMAX representation, single-index models | [`src/risklens/regression_arma.py`](src/risklens/regression_arma.py) | Market beta, annualized alpha, Durbin-Watson statistic, SARIMAX vs HAC OLS comparison |
-| **Unit 4, 5 & 8: Realized Volatility & Bootstrap** | Volatility clustering, multi-step point forecasting, recursive residual bootstrap | [`src/risklens/volatility.py`](src/risklens/volatility.py) | Realized volatility modeling, $B=2000$ residual bootstrap percentile paths (5th/50th/95th), expected risk range |
-| **Unit 8: Vector Autoregression (VAR)** | Multivariate time series, lag order selection, structural stability, Granger causality, Cholesky IRF, FEVD | [`src/risklens/var_analysis.py`](src/risklens/var_analysis.py) | 5-variable macro VAR system, Granger F-tests, 10-day orthogonalized IRF, FEVD tables, 1-step rolling forecast |
-| **Unit 4 & 5: Forecast Evaluation** | Out-of-sample backtesting, expanding-window evaluation, scale-free accuracy metrics | [`src/risklens/evaluation.py`](src/risklens/evaluation.py) | `assert_no_leakage`, rolling-origin backtest, MAE, RMSE, MASE vs naive and rolling-mean baselines |
+| **Seasonality & Decomposition** | STL decomposition, calendar dummy regressions, subseries | [`src/risklens/seasonality.py`](src/risklens/seasonality.py) | Day-of-week OLS dummy F-test, Kruskal-Wallis, trend ($F_T$) & seasonal ($F_S$) strengths |
+| **Stationarity & Diagnostics** | Joint unit root testing, autocorrelation structure | [`src/risklens/diagnostics.py`](src/risklens/diagnostics.py) | Joint ADF & KPSS verdict synthesis, 40-lag ACF/PACF with Bartlett bands, Ljung-Box tests |
+| **Conditional Mean Models** | Information criterion grid search, maximum likelihood, white noise residuals | [`src/risklens/arma_models.py`](src/risklens/arma_models.py) | AICc grid search over $(p,q)$, martingale baseline comparison, Jarque-Bera, normal Q-Q plots |
+| **Factor Regression & Benchmark** | Autocorrelated regression disturbances, Cochrane-Orcutt / SARIMAX representation | [`src/risklens/regression_arma.py`](src/risklens/regression_arma.py) | Market beta, annualized alpha, Durbin-Watson statistic, SARIMAX vs HAC OLS comparison |
+| **Realized Volatility & Bootstrap** | Volatility clustering, recursive residual bootstrap | [`src/risklens/volatility.py`](src/risklens/volatility.py) | Realized volatility modeling, $B=2000$ residual bootstrap percentile paths (5th/50th/95th) |
+| **Macro Vector Autoregression** | Multivariate time series, structural identification, lag selection | [`src/risklens/var_analysis.py`](src/risklens/var_analysis.py) | 5-variable macro VAR system, Granger F-tests, 10-day orthogonalized IRF, FEVD tables |
+| **Forecast Evaluation** | Out-of-sample backtesting, scale-free accuracy metrics | [`src/risklens/evaluation.py`](src/risklens/evaluation.py) | `assert_no_leakage`, rolling-origin backtest, MAE, RMSE, MASE vs naive baselines |
 
 ---
 
 ## 3. Real Data Sources & Operational Limits
 
-RiskLens runs **exclusively on live real data** fetched at runtime. No synthetic data, random numbers, or fabricated outputs are used outside the algorithm validation tests in `tests/`.
+MarketFolio runs **exclusively on live real data** fetched at runtime. No synthetic data, random numbers, or fabricated outputs are used outside the algorithm validation tests in `tests/`.
 
 ### Sources
 1. **Indian Mutual Funds (AMFI Official Data)**:
@@ -68,8 +67,8 @@ RiskLens runs **exclusively on live real data** fetched at runtime. No synthetic
 
 ```bash
 # 1. Clone repository
-git clone https://github.com/aryan-academic/risklens.git
-cd ATSAProj
+git clone https://github.com/aryan-arvind/marketfolio.git
+cd marketfolio
 
 # 2. Create virtual environment
 python -m venv .venv
@@ -98,11 +97,11 @@ python -m risklens.cli --fund-query "Nifty 50 Index Fund Direct Growth"
 python -m risklens.cli --ticker RELIANCE.NS
 
 # Custom benchmark, horizon, and forced fresh download:
-python -m risklens.cli --ticker HDFCBANK.NS --benchmark ^NSEI --horizon 21 --refresh --no-llm
+python -m risklens.cli --ticker HDFCBANK.NS --benchmark ^NSEI --horizon 21 --refresh
 ```
 
 Every CLI run generates a complete artifact bundle in `reports/<asset>_<YYYY-MM-DD>/`:
-- `report.md`: Complete human-readable ATSA analytical report.
+- `report.md`: Quantitative diagnostic report and statistical summary.
 - `results.json`: Full dictionary of computed metrics, p-values, and model parameters.
 - `*.csv`: Tables for flagged outliers, ARMA model comparisons, calendar effects, VAR FEVD, and rolling evaluation.
 - `*.png`: Publication-grade diagnostic charts (ACF/PACF, STL decomposition, residual Q-Q, volatility forecast, market regression, VAR IRF/FEVD).
@@ -127,9 +126,9 @@ python scripts/smoke_test.py
 
 ---
 
-## 6. Econometric Interpretation Guide
+## 6. Econometric Methodology
 
-### Why Direction (Return) is Unpredictable while Volatility is Forecastable
+### Predictability & Market Efficiency vs Volatility Clustering
 - **Weak-Form Efficient Market Hypothesis (Fama 1970)**: In liquid equity markets, information is rapidly incorporated into prices. Expected future log returns conditional on past returns fluctuate around an unconditional drift $E[r_t \mid r_{t-1}, \dots] \approx \mu$. Hence, ARMA grid searches frequently select $(0,0,0)$ or yield negligible $\Delta \text{AICc} > -2.0$ relative to a constant mean. A null return predictability finding is an economically valid result, not an analytical failure.
 - **Volatility Clustering (Mandelbrot 1963; Engle 1982)**: While the *sign* of returns is uncorrelated, the *magnitude* of returns ($|r_t|$ and $r_t^2$) exhibits substantial autocorrelation (ARCH effects). Market uncertainty and information arrival occur in clusters. Consequently, modeling realized volatility $v_t$ with ARMA and residual bootstrap provides strong out-of-sample explanatory and forecasting skill.
 
@@ -146,7 +145,7 @@ python scripts/smoke_test.py
 
 ## 8. Disclaimer
 
-> **ACADEMIC AND EDUCATIONAL USE ONLY**: RiskLens is built strictly for educational and coursework purposes in university Applied Time Series Analysis (ATSA). Nothing produced by this repository constitutes financial, investment, legal, or tax advice. Past statistical performance is no guarantee of future returns.
+> **DISCLAIMER**: MarketFolio is developed for quantitative research and educational analysis. Nothing produced by this system constitutes financial, investment, legal, or tax advice. Past statistical performance is no guarantee of future returns.
 
 ---
 
