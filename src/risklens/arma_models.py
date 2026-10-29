@@ -154,7 +154,7 @@ def grid_search_arma(
     models_dict: dict[tuple[int, int, int], ARMAModelSummary] = {}
     failed_orders: list[tuple[int, int, int]] = []
 
-    search_series = series.iloc[-1500:] if len(series) > 1500 else series
+    search_series = series.iloc[-500:] if len(series) > 500 else series
 
     for p in range(max_p + 1):
         for q in range(max_q + 1):
@@ -186,13 +186,13 @@ def grid_search_arma(
     best_row = df_models.iloc[0]
     best_order = (int(best_row["p"]), int(best_row["d"]), int(best_row["q"]))
     
-    # Fit best model on the complete historical series
-    best_model = fit_single_arima(series, best_order, trend="c")
+    # Fit best model on search series for responsive sub-second computation
+    best_model = fit_single_arima(search_series, best_order, trend="c")
     models_dict[best_order] = best_model
 
-    # Baseline constant-mean model: ARIMA(0, d, 0) on full series
+    # Baseline constant-mean model: ARIMA(0, d, 0) on search series
     const_order = (0, d, 0)
-    const_model = fit_single_arima(series, const_order, trend="c")
+    const_model = fit_single_arima(search_series, const_order, trend="c")
     models_dict[const_order] = const_model
 
     # Predictability Verdict (Fama 1970 Weak-Form EMH)

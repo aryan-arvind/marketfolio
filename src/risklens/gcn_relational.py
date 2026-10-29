@@ -206,6 +206,10 @@ def train_and_evaluate_intermarket_gcn(
             reason=f"Aligned multi-asset observations ({len(df_prices)}) below 300.",
         )
 
+    # Restrict to recent 1,250 trading days (~5 years) for speed and modern regime relevance
+    if len(df_prices) > 1250:
+        df_prices = df_prices.iloc[-1250:]
+
     # Compute daily log returns across all 6 nodes
     df_rets = np.log(df_prices / df_prices.shift(1)).dropna()
     node_names = list(df_rets.columns)
@@ -316,7 +320,7 @@ def train_and_evaluate_intermarket_gcn(
 
     tr_loader = DataLoader(
         TensorDataset(torch.tensor(X_train_norm), torch.tensor(y_train_nodes, dtype=torch.long)),
-        batch_size=32,
+        batch_size=128,
         shuffle=True,
     )
 
@@ -358,13 +362,14 @@ def train_and_evaluate_intermarket_gcn(
     test_start_str = test_dates_list[0].strftime("%Y-%m-%d")
     test_end_str = test_dates_list[-1].strftime("%Y-%m-%d")
 
+    primary_risk_node = max(node_vulnerabilities, key=node_vulnerabilities.get)
     interp = (
-        f"The InterMarketGCN modeled relational risk topology across {N} core financial nodes. "
-        f"On out-of-sample systemic contagion classification (N_test={len(y_test_nodes)}), GCN achieved "
-        f"Macro F1 of {gcn_f1:.4f} (vs Majority Baseline: {base_f1:.4f}). An explicit {horizon}-day embargo "
-        f"was enforced between train ({train_start_str} to {train_end_str}) and test ({test_start_str} to {test_end_str}) "
-        f"to guarantee zero forward label leakage. Node sensitivity identifies "
-        f"'{max(node_vulnerabilities, key=node_vulnerabilities.get)}' as the primary systemic risk propagator."
+        f"The Graph Convolutional Network (GCN) models interconnected risk across {N} core assets "
+        f"(primary stock, benchmark NIFTY50, global indices, USD/INR, and crude oil). "
+        f"On out-of-sample data, it achieved {gcn_acc*100:.1f}% accuracy in predicting cross-market contagion, "
+        f"showing an F1 score of {gcn_f1:.2f} compared to the simple {base_f1:.2f} majority baseline. "
+        f"Sensitivity analysis highlights '{primary_risk_node}' as the most influential external transmitter "
+        f"of market stress to this asset during volatile periods."
     )
 
     return GCNResult(

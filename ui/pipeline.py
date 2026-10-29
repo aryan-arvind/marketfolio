@@ -153,7 +153,7 @@ def execute_analysis_pipeline(
             price_series=prices,
             return_series=returns,
             lookback=15,
-            epochs=12,
+            epochs=3,
         )
     except Exception as exc:
         logger.error("VAE training error: %s", exc)
@@ -170,7 +170,7 @@ def execute_analysis_pipeline(
             return_series=returns,
             horizon=horizon,
             lookback=20,
-            epochs=12,
+            epochs=3,
         )
     except Exception as exc:
         logger.error("Transformer training error: %s", exc)
@@ -185,7 +185,7 @@ def execute_analysis_pipeline(
                 primary_name=display_name,
                 macro_dict=macro_dict,
                 horizon=horizon,
-                epochs=12,
+                epochs=3,
             )
     except Exception as exc:
         logger.error("GCN training error: %s", exc)

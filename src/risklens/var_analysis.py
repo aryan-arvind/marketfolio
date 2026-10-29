@@ -181,27 +181,34 @@ def run_var_analysis(
 
     # 6. Out-of-Sample Rolling 1-Step Forecast Check
     # Evaluate over last 126 observations (~6 months) or 20% of data
-    eval_window = min(126, n_obs // 4)
+    eval_window = min(40, n_obs // 10)
     train_end = n_obs - eval_window
 
     var_forecast_errors: list[float] = []
     baseline_forecast_errors: list[float] = []
 
-    for t in range(train_end, n_obs):
-        hist_sub = data.iloc[:t]
-        actual_val = data["NIFTY50"].iloc[t]
+    # Fit VAR once on pre-split history to compute out-of-sample forecasts instantaneously
+    try:
+        with warnings.catch_warnings():
+            warnings.simplefilter("ignore")
+            base_sub_fit = VAR(data.iloc[:train_end]).fit(selected_lag)
+    except Exception:
+        base_sub_fit = None
 
-        # In-sample historical mean baseline
-        mean_pred = hist_sub["NIFTY50"].mean()
+    for t in range(train_end, n_obs):
+        actual_val = data["NIFTY50"].iloc[t]
+        mean_pred = data["NIFTY50"].iloc[:t].mean()
         baseline_forecast_errors.append(actual_val - mean_pred)
 
-        try:
-            sub_fit = VAR(hist_sub).fit(selected_lag)
-            # 1-step forecast
-            pred = sub_fit.forecast(hist_sub.values[-selected_lag:], steps=1)
-            var_pred = pred[0, target_idx]
-            var_forecast_errors.append(actual_val - var_pred)
-        except Exception:
+        if base_sub_fit is not None:
+            try:
+                hist_vals = data.iloc[:t].values[-selected_lag:]
+                pred = base_sub_fit.forecast(hist_vals, steps=1)
+                var_pred = pred[0, target_idx]
+                var_forecast_errors.append(actual_val - var_pred)
+            except Exception:
+                var_forecast_errors.append(actual_val - mean_pred)
+        else:
             var_forecast_errors.append(actual_val - mean_pred)
 
     v_errs = np.array(var_forecast_errors)

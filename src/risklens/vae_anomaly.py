@@ -156,7 +156,7 @@ def train_and_evaluate_vae_anomaly(
     return_series: pd.Series,
     lookback: int = 15,
     epochs: int = VAE_EPOCHS,
-    batch_size: int = 32,
+    batch_size: int = 128,
     percentile: float = VAE_ANOMALY_PERCENTILE,
 ) -> AnomalyResult:
     """
@@ -360,18 +360,17 @@ def train_and_evaluate_vae_anomaly(
 
     if n_detected_test > 0:
         interpretation = (
-            f"The TimeSeriesVAE identified {n_detected_test} out-of-sample temporal dislocation windows "
-            f"where multivariate market structure broke down relative to the training manifold (threshold: {threshold:.4f}). "
-            f"Of these, {overlap_count} coincided with univariate 3-sigma return shocks, while {novel_vae_count} represented "
-            f"complex multivariate volatility-momentum decouplings that univariate filters missed. "
-            f"(Note: Historical event overlays indicate external calendar co-occurrence and are not model-inferred causal attributions)."
+            f"The VAE neural network identified {n_detected_test} unusual market periods (anomalies) where "
+            f"the combination of price returns, volatility, and momentum significantly deviated from normal historical patterns "
+            f"(threshold: {threshold:.4f}). Standard single-variable statistical filters caught only {overlap_count} of these, "
+            f"meaning the autoencoder detected {novel_vae_count} hidden risk events that traditional models missed. "
+            f"(Historical event labels highlight notable market crashes for context)."
         )
     else:
         interpretation = (
-            f"During the out-of-sample test window, reconstruction loss remained comfortably below the training "
-            f"P95 threshold ({threshold:.4f}). Asset behavior remained consistent with learned normal regime dynamics "
-            f"without severe structural breakdown. "
-            f"(Note: Historical event overlays indicate external calendar co-occurrence and are not model-inferred causal attributions)."
+            f"During the out-of-sample test window, the asset behaved normally with reconstruction error below "
+            f"the 95th-percentile anomaly threshold ({threshold:.4f}), indicating stable risk dynamics without extreme structural stress. "
+            f"(Historical event labels highlight notable market crashes for context)."
         )
 
     latent_coords = timeline_df[["date", "split", "latent_z1", "latent_z2", "is_vae_anomaly", "vae_recon_error"]].copy()

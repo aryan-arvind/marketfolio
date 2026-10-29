@@ -94,21 +94,21 @@ def select_and_fit_volatility_arima(
     d = 0 if diag.adf_pvalue < 0.05 else 1
 
     clean_vals = log_vol.dropna().to_numpy()
-    search_vals = clean_vals[-1500:] if len(clean_vals) > 1500 else clean_vals
+    search_vals = clean_vals[-500:] if len(clean_vals) > 500 else clean_vals
     nobs_search = len(search_vals)
 
     best_aicc = float("inf")
     best_order = (1, d, 1)
 
-    for p in range(3):
-        for q in range(3):
+    for p in range(2):
+        for q in range(2):
             order = (p, d, q)
             trend = "c" if d == 0 else None
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
                     model = ARIMA(search_vals, order=order, trend=trend)
-                    res = model.fit(method_kwargs={"maxiter": 25, "disp": False})
+                    res = model.fit(method_kwargs={"maxiter": 20, "disp": False})
                 aicc = calculate_aicc(float(res.aic), nobs_search, len(res.params))
                 if aicc < best_aicc:
                     best_aicc = aicc
@@ -116,16 +116,16 @@ def select_and_fit_volatility_arima(
             except Exception:
                 continue
 
-    # Fit the chosen best order on the full historical series
+    # Fit the chosen best order on the recent search series for sub-second response
     trend = "c" if d == 0 else None
     try:
-        best_fit = ARIMA(clean_vals, order=best_order, trend=trend).fit(
-            method_kwargs={"maxiter": 30, "disp": False}
+        best_fit = ARIMA(search_vals, order=best_order, trend=trend).fit(
+            method_kwargs={"maxiter": 20, "disp": False}
         )
     except Exception:
         best_order = (1, d, 0)
-        best_fit = ARIMA(clean_vals, order=best_order, trend=trend).fit(
-            method_kwargs={"maxiter": 25, "disp": False}
+        best_fit = ARIMA(search_vals, order=best_order, trend=trend).fit(
+            method_kwargs={"maxiter": 20, "disp": False}
         )
 
     logger.info("Selected Volatility ARIMA%s for '%s' (AICc=%.2f)", best_order, asset_name, best_aicc)

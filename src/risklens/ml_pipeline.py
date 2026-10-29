@@ -322,6 +322,10 @@ def prepare_ml_dataset(
     if len(common_idx) < 200:
         raise ValueError(f"Insufficient aligned feature-target observations ({len(common_idx)}).")
 
+    # Limit to most recent 1,250 trading days (~5 years) for computational speed and regime relevance
+    if len(common_idx) > 1250:
+        common_idx = common_idx[-1250:]
+
     aligned_features = features_df.loc[common_idx]
     aligned_vol = fwd_vol.loc[common_idx]
 

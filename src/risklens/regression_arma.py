@@ -118,12 +118,14 @@ def fit_regression_arma(
     best_aicc = float("inf")
     best_order = (0, 0, 0)
 
-    y_search = y[-1500:] if len(y) > 1500 else y
-    X_search = X_scalar[-1500:] if len(X_scalar) > 1500 else X_scalar
+    y_vals = y.to_numpy(dtype=float)
+    X_vals = X_scalar.to_numpy(dtype=float)
+    y_search = y_vals[-500:] if len(y_vals) > 500 else y_vals
+    X_search = X_vals[-500:] if len(X_vals) > 500 else X_vals
     n_search = len(y_search)
 
-    for p in range(max_p + 1):
-        for q in range(max_q + 1):
+    for p in range(min(max_p, 1) + 1):
+        for q in range(min(max_q, 1) + 1):
             try:
                 with warnings.catch_warnings():
                     warnings.simplefilter("ignore")
@@ -135,7 +137,7 @@ def fit_regression_arma(
                         enforce_stationarity=True,
                         enforce_invertibility=False,
                     )
-                    res = model.fit(disp=False, maxiter=20)
+                    res = model.fit(disp=False, maxiter=15)
                 k_params = len(res.params)
                 aicc = calculate_aicc(float(res.aic), n_search, k_params)
                 if aicc < best_aicc:
@@ -144,18 +146,18 @@ def fit_regression_arma(
             except Exception:
                 continue
 
-    # Fit best order on full dataset
+    # Fit best order on search series for responsive sub-second computation
     try:
         best_sarimax = SARIMAX(
-            y,
-            exog=X_scalar,
+            y_search,
+            exog=X_search,
             order=best_order,
             trend="c",
             enforce_stationarity=True,
             enforce_invertibility=False,
-        ).fit(disp=False, maxiter=25)
+        ).fit(disp=False, maxiter=20)
     except Exception:
-        best_sarimax = SARIMAX(y, exog=X_scalar, order=(0, 0, 0), trend="c").fit(disp=False, maxiter=20)
+        best_sarimax = SARIMAX(y_search, exog=X_search, order=(0, 0, 0), trend="c").fit(disp=False, maxiter=15)
         best_order = (0, 0, 0)
 
     # Extract SARIMAX estimates

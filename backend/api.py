@@ -64,7 +64,17 @@ def _serialize_series(s: pd.Series) -> dict[str, list]:
     }
 
 
+import json
+import re
+
 _ANALYSIS_CACHE: dict[tuple, dict] = {}
+API_CACHE_DIR = BASE_DIR / ".cache" / "api_analysis"
+API_CACHE_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def _get_disk_cache_path(key: tuple) -> Path:
+    safe = "_".join(re.sub(r"[^A-Za-z0-9_-]", "_", str(k)) for k in key)
+    return API_CACHE_DIR / f"{safe}.json"
 
 
 @app.get("/api/health")
@@ -75,8 +85,18 @@ def health_check():
 @app.post("/api/analyze")
 def analyze_asset(req: AnalysisRequest):
     cache_key = (req.asset_mode, req.asset_input.strip().upper(), req.benchmark_symbol, req.horizon)
-    if not req.force_refresh and cache_key in _ANALYSIS_CACHE:
-        return _ANALYSIS_CACHE[cache_key]
+    if not req.force_refresh:
+        if cache_key in _ANALYSIS_CACHE:
+            return _ANALYSIS_CACHE[cache_key]
+        disk_path = _get_disk_cache_path(cache_key)
+        if disk_path.exists():
+            try:
+                with open(disk_path, "r", encoding="utf-8") as f:
+                    cached = json.load(f)
+                _ANALYSIS_CACHE[cache_key] = cached
+                return cached
+            except Exception:
+                pass
 
     try:
         raw = execute_analysis_pipeline(
@@ -502,6 +522,12 @@ def analyze_asset(req: AnalysisRequest):
         "trello": trello_obj,
     }
     _ANALYSIS_CACHE[cache_key] = response_payload
+    try:
+        disk_path = _get_disk_cache_path(cache_key)
+        with open(disk_path, "w", encoding="utf-8") as f:
+            json.dump(response_payload, f)
+    except Exception:
+        pass
     return response_payload
 
 
