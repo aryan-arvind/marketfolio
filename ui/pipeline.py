@@ -33,6 +33,7 @@ from risklens.ml_pipeline import (
     build_multivariate_feature_matrix,
     construct_volatility_regime_targets,
     create_chronological_splits,
+    prepare_ml_dataset,
 )
 from risklens.narrator import generate_narrative
 from risklens.regression_arma import fit_regression_arma

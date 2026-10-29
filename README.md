@@ -2,10 +2,15 @@
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-blue.svg)](LICENSE)
 [![Python: 3.10--3.12](https://img.shields.io/badge/python-3.10%20%7C%203.11%20%7C%203.12-blue)](https://www.python.org/)
-[![PyTorch: 2.15](https://img.shields.io/badge/PyTorch-CPU%20Verified-ee4c2c)](https://pytorch.org/)
-[![Test Suite: 19 Passed](https://img.shields.io/badge/Tests-19%2F19%20Passing-10b981)](tests/)
+[![PyTorch: 2.5](https://img.shields.io/badge/PyTorch-CPU%20Verified-ee4c2c)](https://pytorch.org/)
+[![Test Suite: 23 Passed](https://img.shields.io/badge/Tests-23%2F23%20Passing-10b981)](tests/)
 
 **MarketFolio** is an institutional quantitative analytics system and advanced machine learning platform for Indian equities, mutual funds, and macroeconomic transmission. It combines rigorous financial econometrics (joint ADF/KPSS unit roots, Cochrane-Orcutt SARIMAX regressions, 5-variable macro VAR systems, expanding-window rolling backtests) with academically defensible deep neural architectures (Variational Autoencoders, Multi-Head Self-Attention Transformers, and Spectral Graph Convolutional Networks).
+
+### 🎓 Academic Defense & Verification Links
+- **[Presentation Guide & Viva Script](docs/PRESENTATION_GUIDE.md)**: Master reference guide, 2-minute elevator pitch, live walkthrough sequence, and comprehensive viva Q&A for faculty defense.
+- **[System Verification Report](docs/FINAL_VERIFICATION.md)**: Verified 23/23 unit tests, 4,362-day real-data training logs, zero-leakage embargo validation, and CPU hardware details.
+- **[Real Experiment Training Evidence](reports/real_experiment_evidence_RELIANCE_NS.json)**: Full raw epoch-by-epoch loss traces and held-out test metrics on `RELIANCE.NS` (2008–2026).
 
 The platform features both a multi-tab **Streamlit Financial Terminal** and a modern **React + FastAPI Web Trading Terminal**, accompanied by an integrated research governance tracker.
 

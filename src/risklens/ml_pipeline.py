@@ -121,13 +121,17 @@ def build_multivariate_feature_matrix(
             aligned_macro = macro_df.loc[common_idx]
             for col in aligned_macro.columns:
                 m_series = aligned_macro[col]
-                # If level is index/price, take log difference
-                if "VIX" in col.upper():
+                # If series already represents returns (e.g. from align_macro_series with negative values), use directly
+                if (m_series < 0).any():
+                    df[f"macro_{col.lower()}_ret"] = m_series.reindex(df.index)
+                elif "VIX" in col.upper():
                     df[f"macro_{col.lower()}"] = m_series.reindex(df.index)
                 else:
-                    df[f"macro_{col.lower()}_ret"] = np.log(m_series / m_series.shift(1)).reindex(df.index)
+                    ret = np.log(m_series.clip(lower=1e-4) / m_series.shift(1).clip(lower=1e-4))
+                    df[f"macro_{col.lower()}_ret"] = ret.reindex(df.index)
 
-    # Drop warm-up NaN rows (from 50-day rolling window)
+    # Clean infinite values and drop warm-up NaN rows (from 50-day rolling window)
+    df = df.replace([np.inf, -np.inf], np.nan)
     clean_df = df.dropna().copy()
     logger.info("Constructed feature matrix: %d rows, %d features.", len(clean_df), clean_df.shape[1])
     return clean_df
