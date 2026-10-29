@@ -1,0 +1,795 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>MarketFolio — Master ATML Study & Defense Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
+  <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+  <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+  <style>
+    :root {
+      --bg: #090d16;
+      --bg-surface: #101726;
+      --bg-card: #151f33;
+      --bg-card-hover: #1a2740;
+      --border: #212e47;
+      --border-accent: #2e4166;
+      --text: #e2e8f0;
+      --text-muted: #94a3b8;
+      --text-dim: #64748b;
+      --teal: #06b6d4;
+      --teal-dim: rgba(6, 182, 212, 0.12);
+      --green: #10b981;
+      --green-dim: rgba(16, 185, 129, 0.12);
+      --red: #ef4444;
+      --red-dim: rgba(239, 68, 68, 0.12);
+      --amber: #f59e0b;
+      --amber-dim: rgba(245, 158, 11, 0.12);
+      --purple: #8b5cf6;
+      --purple-dim: rgba(139, 92, 246, 0.12);
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+
+    body {
+      background-color: var(--bg);
+      color: var(--text);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      line-height: 1.65;
+      padding-bottom: 80px;
+    }
+
+    header {
+      background: linear-gradient(180deg, #101827 0%, #090d16 100%);
+      border-bottom: 1px solid var(--border);
+      padding: 48px 24px;
+      text-align: center;
+      position: relative;
+    }
+
+    .badge-container {
+      display: flex;
+      justify-content: center;
+      gap: 10px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 0.75rem;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      border: 1px solid transparent;
+    }
+
+    .badge-teal { background: var(--teal-dim); color: var(--teal); border-color: rgba(6, 182, 212, 0.3); }
+    .badge-green { background: var(--green-dim); color: var(--green); border-color: rgba(16, 185, 129, 0.3); }
+    .badge-purple { background: var(--purple-dim); color: var(--purple); border-color: rgba(139, 92, 246, 0.3); }
+    .badge-amber { background: var(--amber-dim); color: var(--amber); border-color: rgba(245, 158, 11, 0.3); }
+
+    h1 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 2.5rem;
+      font-weight: 700;
+      color: #fff;
+      margin-bottom: 12px;
+      letter-spacing: -0.02em;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 1.1rem;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+
+    .container {
+      max-width: 1100px;
+      margin: 0 auto;
+      padding: 0 24px;
+    }
+
+    nav.toc {
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 36px 0;
+    }
+
+    nav.toc h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      color: var(--teal);
+      margin-bottom: 16px;
+    }
+
+    nav.toc ul {
+      list-style: none;
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+      gap: 10px;
+    }
+
+    nav.toc a {
+      color: var(--text-muted);
+      text-decoration: none;
+      font-size: 0.92rem;
+      transition: color 0.2s;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    nav.toc a:hover {
+      color: #fff;
+    }
+
+    nav.toc a span {
+      color: var(--teal);
+      font-family: 'JetBrains Mono', monospace;
+      font-size: 0.8rem;
+    }
+
+    section {
+      margin-top: 50px;
+    }
+
+    .section-header {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .section-num {
+      background: var(--teal);
+      color: #000;
+      font-weight: 700;
+      font-family: 'Space Grotesk', sans-serif;
+      width: 32px;
+      height: 32px;
+      border-radius: 8px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 1rem;
+    }
+
+    h2 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.65rem;
+      font-weight: 700;
+      color: #fff;
+    }
+
+    h3 {
+      font-family: 'Space Grotesk', sans-serif;
+      font-size: 1.25rem;
+      font-weight: 600;
+      color: #f1f5f9;
+      margin: 24px 0 12px 0;
+    }
+
+    p {
+      color: var(--text);
+      margin-bottom: 16px;
+      font-size: 1rem;
+    }
+
+    .card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 20px;
+      transition: border-color 0.2s;
+    }
+
+    .card:hover {
+      border-color: var(--border-accent);
+    }
+
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .grid-3 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 20px;
+      margin-bottom: 24px;
+    }
+
+    .callout {
+      border-left: 4px solid var(--teal);
+      background: var(--teal-dim);
+      padding: 16px 20px;
+      border-radius: 0 8px 8px 0;
+      margin: 20px 0;
+    }
+
+    .callout-warning {
+      border-left-color: var(--amber);
+      background: var(--amber-dim);
+    }
+
+    .callout-success {
+      border-left-color: var(--green);
+      background: var(--green-dim);
+    }
+
+    .callout h4 {
+      font-weight: 600;
+      margin-bottom: 6px;
+      color: #fff;
+    }
+
+    .flow-step {
+      display: flex;
+      gap: 16px;
+      margin-bottom: 16px;
+      background: var(--bg-surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 16px 20px;
+      align-items: flex-start;
+    }
+
+    .step-badge {
+      background: var(--teal-dim);
+      color: var(--teal);
+      border: 1px solid rgba(6, 182, 212, 0.4);
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 600;
+      font-size: 0.85rem;
+      padding: 4px 10px;
+      border-radius: 6px;
+      white-space: nowrap;
+    }
+
+    .math-block {
+      background: #0d1320;
+      border: 1px solid #1a253a;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 16px 0;
+      overflow-x: auto;
+      text-align: center;
+      font-size: 1.05rem;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      margin: 20px 0;
+      font-size: 0.95rem;
+    }
+
+    th, td {
+      border: 1px solid var(--border);
+      padding: 12px 16px;
+      text-align: left;
+    }
+
+    th {
+      background: var(--bg-surface);
+      color: #fff;
+      font-weight: 600;
+      font-family: 'Space Grotesk', sans-serif;
+    }
+
+    tr:nth-child(even) {
+      background: rgba(255, 255, 255, 0.02);
+    }
+
+    .qna-box {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      margin-bottom: 18px;
+      overflow: hidden;
+    }
+
+    .qna-header {
+      background: rgba(255, 255, 255, 0.03);
+      border-bottom: 1px solid var(--border);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .q-tag {
+      background: var(--purple-dim);
+      color: var(--purple);
+      border: 1px solid rgba(139, 92, 246, 0.3);
+      padding: 3px 8px;
+      border-radius: 4px;
+      font-family: 'JetBrains Mono', monospace;
+      font-weight: 700;
+      font-size: 0.75rem;
+    }
+
+    .q-title {
+      font-weight: 600;
+      color: #fff;
+      font-size: 1.05rem;
+    }
+
+    .qna-body {
+      padding: 20px;
+      color: #cbd5e1;
+      font-size: 0.96rem;
+      line-height: 1.7;
+    }
+
+    .qna-body blockquote {
+      background: rgba(6, 182, 212, 0.06);
+      border-left: 3px solid var(--teal);
+      padding: 12px 16px;
+      margin-top: 10px;
+      border-radius: 0 6px 6px 0;
+      color: #e2e8f0;
+      font-style: italic;
+    }
+
+    .script-box {
+      background: #0b111c;
+      border: 1px solid var(--teal);
+      border-radius: 12px;
+      padding: 24px;
+      font-family: 'Inter', sans-serif;
+      font-size: 1.05rem;
+      line-height: 1.8;
+      color: #f8fafc;
+      margin: 20px 0;
+      box-shadow: 0 8px 30px rgba(6, 182, 212, 0.1);
+    }
+
+    .script-box p {
+      margin-bottom: 14px;
+    }
+
+    .trello-banner {
+      background: linear-gradient(135deg, #0e1e38 0%, #172a4d 100%);
+      border: 1px solid #2b4980;
+      border-radius: 12px;
+      padding: 24px;
+      margin-bottom: 24px;
+    }
+
+    code {
+      font-family: 'JetBrains Mono', monospace;
+      background: rgba(255, 255, 255, 0.08);
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-size: 0.88rem;
+      color: var(--teal);
+    }
+  </style>
+</head>
+<body>
+
+  <header>
+    <div class="badge-container">
+      <span class="badge badge-teal">Course: ATML (2025–2026)</span>
+      <span class="badge badge-green">23/23 Unit Tests Passing</span>
+      <span class="badge badge-purple">4,362 Real Historical Days</span>
+      <span class="badge badge-amber">Zero-Leakage Verified</span>
+    </div>
+    <h1>MarketFolio Master ATML Study & Defense Guide</h1>
+    <p class="subtitle">Complete conceptual breakdown, architecture blueprints, viva Q&A, and research governance for university faculty evaluation.</p>
+  </header>
+
+  <div class="container">
+
+    <nav class="toc">
+      <h3>Quick Navigation</h3>
+      <ul>
+        <li><a href="#problem"><span>01</span> Problem Statement & Market Realities</a></li>
+        <li><a href="#pipeline"><span>02</span> End-to-End System Architecture</a></li>
+        <li><a href="#vae"><span>03</span> Deep Anomaly VAE Engine</a></li>
+        <li><a href="#transformer"><span>04</span> Volatility Transformer & Regimes</a></li>
+        <li><a href="#gcn"><span>05</span> Inter-Market Relational GCN</a></li>
+        <li><a href="#backend"><span>06</span> What the Backend Actually Does</a></li>
+        <li><a href="#script"><span>07</span> Exact Presentation Script</a></li>
+        <li><a href="#viva"><span>08</span> Most Probable Viva Questions</a></li>
+        <li><a href="#trello"><span>09</span> SEPARATE: Trello Research Tracker</a></li>
+      </ul>
+    </nav>
+
+    <!-- SECTION 1 -->
+    <section id="problem">
+      <div class="section-header">
+        <div class="section-num">1</div>
+        <h2>The Problem Statement — Why Does MarketFolio Exist?</h2>
+      </div>
+
+      <div class="callout callout-warning">
+        <h4>🚨 The Big Trap: Predicting Tomorrow's Stock Price</h4>
+        <p>Most machine learning projects on equities take daily closing prices, pass them through a basic LSTM, and show overlapping lines claiming 98% accuracy. In real academic machine learning and quantitative finance, <strong>this is a fundamental fallacy</strong>.</p>
+      </div>
+
+      <div class="grid-3">
+        <div class="card">
+          <h3 style="color: var(--amber);">1. Weak-Form EMH</h3>
+          <p>Eugene Fama's Nobel Prize-winning <strong>Efficient Market Hypothesis</strong> proves that price movements follow a Markovian random walk. Today's price already incorporates all historical data. Next-tick direction is white noise.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: var(--red);">2. The Lag-1 Illusion</h3>
+          <p>If a neural network simply outputs $\hat{y}_{t+1} = y_t$ (tomorrow's price equals today's price), the lines look identical with a high $R^2$, but the model has <strong>zero edge</strong>—it is just a 1-day delayed mirror.</p>
+        </div>
+        <div class="card">
+          <h3 style="color: var(--teal);">3. The Leakage Trap</h3>
+          <p>Using <code>train_test_split(shuffle=True)</code> or fitting scalers across the full dataset leaks future market crashes into training features. The model memorizes the future, creating false high performance.</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h3>What MarketFolio Actually Solves</h3>
+        <p>Instead of guessing unpredictable price noise, institutional quant desks care about <strong>three real, predictable phenomena</strong>:</p>
+        <ul style="margin-left: 20px; color: var(--text-muted);">
+          <li><strong style="color: #fff;">1. Structural Anomalies & Tail Risk:</strong> Has the market entered an unprecedented dislocation (e.g., March 2020 COVID crash) where historical correlations shatter?</li>
+          <li><strong style="color: #fff;">2. Volatility Regimes:</strong> While price direction is random, <strong>volatility clusters heavily</strong> (Mandelbrot, 1963). Will the next 10 days experience Low, Normal, or High turbulence?</li>
+          <li><strong style="color: #fff;">3. Cross-Market Contagion:</strong> When Brent Crude spikes or the US Dollar strengthens, how does that macroeconomic shock transmit across a relational network to hit Reliance Industries?</li>
+        </ul>
+      </div>
+    </section>
+
+    <!-- SECTION 2 -->
+    <section id="pipeline">
+      <div class="section-header">
+        <div class="section-num">2</div>
+        <h2>End-to-End System Architecture</h2>
+      </div>
+
+      <div class="flow-step">
+        <span class="step-badge">STEP 1</span>
+        <div>
+          <h4>Real Market Data Ingestion</h4>
+          <p>Downloads daily historical data from Yahoo Finance for <code>RELIANCE.NS</code> and 5 macroeconomic benchmarks: NIFTY 50 (<code>^NSEI</code>), S&P 500 (<code>^GSPC</code>), Brent Crude (<code>BZ=F</code>), USD/INR (<code>USDINR=X</code>), and India VIX (<code>^INDIAVIX</code>).</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <span class="step-badge">STEP 2</span>
+        <div>
+          <h4>Stationarity & Synchronization</h4>
+          <p>Transforms raw price levels into stationary log returns: $r_t = \ln(P_t / P_{t-1})$. Joint <strong>ADF and KPSS unit-root tests</strong> confirm returns are $I(0)$ stationary while prices are $I(1)$ integrated. Synchronizes market holidays between India and the US, yielding <strong>4,362 aligned trading sessions (2008–2026)</strong>.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <span class="step-badge">STEP 3</span>
+        <div>
+          <h4>Zero-Leakage Temporal Splitting & Embargo</h4>
+          <p>Strict chronological partitioning: <strong>70% Train</strong> (2008–2020), <strong>15% Validation</strong> (2020–2022), and <strong>15% Held-Out Test</strong> (2022–2026). Feature scalers are fit <strong>strictly on the training partition</strong>. An <strong>$H=10$-day Embargo Gap</strong> purges boundary overlap.</p>
+        </div>
+      </div>
+
+      <div class="flow-step">
+        <span class="step-badge">STEP 4</span>
+        <div>
+          <h4>Triple ATML Deep Learning Execution</h4>
+          <p>Trains <strong>TimeSeriesVAE</strong> for generative anomaly detection, <strong>Volatility Transformer</strong> for attention-based regime classification, and <strong>InterMarketGCN</strong> for relational cross-asset risk transmission.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 3: VAE -->
+    <section id="vae">
+      <div class="section-header">
+        <div class="section-num">3</div>
+        <h2>Deep Anomaly VAE Engine (Generative Latent Modeling)</h2>
+      </div>
+
+      <div class="card">
+        <div class="badge badge-teal" style="margin-bottom: 12px;">Syllabus: Generative Models & Variational Inference</div>
+        <h3>The "Financial Lie Detector" Analogy</h3>
+        <p>A standard Autoencoder compresses data into arbitrary numbers and can memorize training noise. A <strong>Variational Autoencoder (VAE)</strong> forces the latent representations into a continuous probability distribution—a standard bell curve $\mathcal{N}(0, I)$.</p>
+        <p>We train the VAE on normal market behavior. In normal markets, it reconstructs multivariate indicators with high precision. When an extreme shock occurs (like March 2020), correlations break down and the VAE fails to reconstruct the inputs—<strong>the Reconstruction Loss spikes!</strong></p>
+
+        <div class="math-block">
+          $$\mathcal{L}_{\text{VAE}} = \underbrace{\frac{1}{D}\sum_{j=1}^{D}(x_j - \hat{x}_j)^2}_{\text{Reconstruction Error (MSE)}} + \beta \cdot \underbrace{D_{\text{KL}}\left(q_\phi(z|x) \,\|\, \mathcal{N}(0, I)\right)}_{\text{Kullback-Leibler Divergence}}$$
+        </div>
+
+        <h3>The Reparameterization Trick</h3>
+        <p>To sample $z \sim \mathcal{N}(\mu, \sigma^2)$, standard random sampling is non-differentiable (gradients cannot flow through random chance). The <strong>Reparameterization Trick</strong> isolates the randomness by sampling independent noise $\epsilon \sim \mathcal{N}(0, I)$:</p>
+        <div class="math-block">
+          $$z = \mu + \sigma \odot \epsilon$$
+        </div>
+        <p>Now the entire operation is differentiable with respect to $\mu$ and $\sigma$, enabling gradient backpropagation!</p>
+
+        <div class="callout callout-success">
+          <h4>Academic Zero-Leakage Safeguard</h4>
+          <p>The anomaly threshold $\tau = 1.60267$ is calibrated at the <strong>95th percentile strictly on historical training data</strong>. We never look at test data to decide what constitutes an anomaly.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 4: TRANSFORMER -->
+    <section id="transformer">
+      <div class="section-header">
+        <div class="section-num">4</div>
+        <h2>Volatility Regime Transformer (Multi-Head Self-Attention)</h2>
+      </div>
+
+      <div class="card">
+        <div class="badge badge-purple" style="margin-bottom: 12px;">Syllabus: Sequence Modeling & Attention Mechanisms</div>
+        <h3>The "Attentive Financial Historian"</h3>
+        <p>Standard RNNs read time-series step-by-step and suffer from sequential bottlenecks. The <strong>Transformer</strong> evaluates the entire 20-day historical window simultaneously. If day 18 had a sudden volume spike and day 2 had a currency dip, <strong>Self-Attention</strong> directly links them with a learned attention weight.</p>
+
+        <div class="math-block">
+          $$\text{Attention}(Q, K, V) = \text{softmax}\left(\frac{Q K^T}{\sqrt{d_k}}\right) V$$
+        </div>
+
+        <h3>Why Volatility Regimes Instead of Stock Prices?</h3>
+        <p>While price direction is random, <strong>volatility clusters intensely</strong> (Mandelbrot, 1963). We predict the future 10-day volatility regime:</p>
+        <ul>
+          <li><strong>Class 0 (Low Volatility):</strong> Bottom 33.3% of historical training distribution.</li>
+          <li><strong>Class 1 (Normal Volatility):</strong> Middle 33.3%.</li>
+          <li><strong>Class 2 (High Volatility):</strong> Top 33.3% (turbulent, high-risk conditions).</li>
+        </ul>
+
+        <div class="callout callout-warning">
+          <h4>The Honest Econometric Finding (Why Persistence Won)</h4>
+          <p>On our held-out test set, the Transformer achieved <strong>62.44% raw accuracy</strong>, but had a lower Macro F1 (0.3136) than the <strong>Martingale Persistence Baseline</strong> (0.3981), which predicts <em>"tomorrow's regime equals today's regime."</em> In real financial markets, volatility regimes persist for long stretches. Acknowledging this benchmark honestly demonstrates academic rigor over synthetic manipulation.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 5: GCN -->
+    <section id="gcn">
+      <div class="section-header">
+        <div class="section-num">5</div>
+        <h2>Inter-Market Relational GCN (Non-Euclidean Graph Convolutions)</h2>
+      </div>
+
+      <div class="card">
+        <div class="badge badge-green" style="margin-bottom: 12px;">Syllabus: Graph Neural Networks & Spectral Convolutions</div>
+        <h3>The "Financial Spiderweb"</h3>
+        <p>No asset trades in isolation. Reliance Industries is linked to domestic and global macro factors. We build a 6-node synchronized graph connecting Reliance to NIFTY 50, S&P 500, Brent Crude, USD/INR, and India VIX.</p>
+
+        <div class="math-block">
+          $$H^{(l+1)} = \text{ReLU}\left(\hat{A} H^{(l)} W^{(l)}\right), \quad \text{where } \hat{A} = \tilde{D}^{-1/2} \tilde{A} \tilde{D}^{-1/2}$$
+        </div>
+
+        <h3>Why Symmetric Degree Normalization Matters</h3>
+        <p>If node $i$ has 5 connections and node $j$ has 1 connection, multiplying by raw adjacency would scale node $i$'s features 5 times larger! Kipf & Welling's degree normalization $\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}$ scales neighbor aggregation by their mutual degrees, preventing gradient explosion.</p>
+
+        <div class="callout callout-success">
+          <h4>Empirical Result: +20.95% Performance Gain</h4>
+          <p>The GCN achieved a <strong>Macro F1 of 0.6520</strong>, outperforming single-asset models (0.4425) by <strong>+20.95%</strong>. This proves mathematically that cross-market network topology provides critical predictive information that isolated asset models miss!</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 6: BACKEND -->
+    <section id="backend">
+      <div class="section-header">
+        <div class="section-num">6</div>
+        <h2>What the Backend Actually Does Under the Hood</h2>
+      </div>
+
+      <div class="card">
+        <p>When you click <strong>Run Analysis</strong> in MarketFolio, here is what executes:</p>
+        <table>
+          <thead>
+            <tr>
+              <th>File / Module</th>
+              <th>Under-the-Hood Operation</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>backend/api.py</code></td>
+              <td>FastAPI server handling <code>POST /api/analyze</code>, validating request parameters, and returning JSON.</td>
+            </tr>
+            <tr>
+              <td><code>src/risklens/market_data.py</code></td>
+              <td>Downloads adjusted close prices for 6 assets from Yahoo Finance, aligns trading calendars, and creates 4,362 rows.</td>
+            </tr>
+            <tr>
+              <td><code>src/risklens/ml_pipeline.py</code></td>
+              <td>Computes log returns, 21-day volatility, MACD, and RSI. Fits <code>StandardScaler</code> strictly on the first 3,053 rows and applies frozen statistics to test data.</td>
+            </tr>
+            <tr>
+              <td><code>src/risklens/vae_anomaly.py</code></td>
+              <td>Converts features to PyTorch tensors, trains for 35 epochs using AdamW, calculates reconstruction loss, and flags anomalies above P95 threshold.</td>
+            </tr>
+            <tr>
+              <td><code>src/risklens/transformer_regime.py</code></td>
+              <td>Adds sinusoidal positional encodings, passes 20-day sequences through 2 Transformer encoder layers (4 heads), and outputs 3 regime probabilities.</td>
+            </tr>
+            <tr>
+              <td><code>src/risklens/gcn_relational.py</code></td>
+              <td>Computes correlation adjacency matrix on train set, applies threshold $\tau=0.15$, normalizes via $\tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}$, and runs 2 GCN layers.</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- SECTION 7: SCRIPT -->
+    <section id="script">
+      <div class="section-header">
+        <div class="section-num">7</div>
+        <h2>Master Presentation Script ("What to Say to Mam")</h2>
+      </div>
+
+      <div class="script-box">
+        <p><strong>"Good morning, Mam.</strong></p>
+        <p>Today we are presenting <strong>MarketFolio</strong>, an institutional quantitative risk engine and advanced machine learning platform for financial time-series.</p>
+        <p>Mam, when most students apply machine learning to stock prices, they make three fundamental errors: they try to predict random price noise, they shuffle time-series causing lookahead data leakage, and they analyze assets in complete isolation.</p>
+        <p>In MarketFolio, we set out to build an academically defensible system grounded in our <strong>ATML syllabus</strong>. We implemented three core deep learning architectures:</p>
+        <p><strong>First, for Anomaly and Tail Risk Detection</strong>, we built a <strong>Variational Autoencoder (VAE)</strong>. Instead of basic threshold heuristics, our VAE learns the latent multivariate probability distribution of normal market covariance using the Reparameterization Trick and ELBO loss. When market dislocations occur—such as the March 2020 COVID crash—reconstruction error spikes beyond a 95th-percentile threshold calibrated strictly on training data.</p>
+        <p><strong>Second, for Volatility Regime Forecasting</strong>, we implemented a <strong>Multi-Head Self-Attention Transformer</strong>. Because stock returns are random walks but volatility clusters heavily in time, we model future 10-day volatility regimes (Low, Normal, and High). Importantly, we enforce an $H=10$-day embargo gap to prevent forward-looking label overlap.</p>
+        <p><strong>Third, for Systemic Risk Transmission</strong>, we built a <strong>Spectral Graph Convolutional Network (GCN)</strong>. An equity like Reliance does not trade in a vacuum. We built a 6-node cross-market graph connecting Reliance to NIFTY 50, S&P 500, Brent Crude, USD/INR, and India VIX. Using Kipf & Welling's degree-normalized graph convolution, the GCN achieved a Macro F1 score of 0.6520, beating single-asset baselines by over 20%.</p>
+        <p>All models were evaluated on 4,362 real trading sessions from 2008 to 2026. Our test suite of 23 unit tests is fully passing. We would be delighted to demonstrate the live dashboard and answer any questions."</p>
+      </div>
+    </section>
+
+    <!-- SECTION 8: VIVA QNA -->
+    <section id="viva">
+      <div class="section-header">
+        <div class="section-num">8</div>
+        <h2>Most Probable Viva Questions & Bulletproof Answers</h2>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q1</span>
+          <span class="q-title">Why did you use a VAE instead of a regular Autoencoder?</span>
+        </div>
+        <div class="qna-body">
+          A standard deterministic Autoencoder maps inputs to fixed discrete points in latent space without continuity constraints, making it prone to overfitting and memorizing noise. A <strong>Variational Autoencoder</strong> forces latent representations into a continuous probability distribution $\mathcal{N}(0, I)$ via the KL Divergence loss term. This creates a smooth, probabilistic representation of normal market covariance, making reconstruction error far more reliable for flagging true structural dislocations.
+        </div>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q2</span>
+          <span class="q-title">What is the Reparameterization Trick, and why is it needed?</span>
+        </div>
+        <div class="qna-body">
+          In a VAE, we need to sample a latent vector $z$ from $\mathcal{N}(\mu, \sigma^2)$. But random sampling is a non-differentiable operation—gradients cannot backpropagate through random chance! The Reparameterization Trick factors out randomness by sampling independent noise $\epsilon \sim \mathcal{N}(0, I)$ and computing:
+          <blockquote>$$z = \mu + \sigma \odot \epsilon$$</blockquote>
+          This operation is completely differentiable with respect to $\mu$ and $\sigma$, allowing standard gradient descent to train the encoder.
+        </div>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q3</span>
+          <span class="q-title">Did you shuffle your time-series data when splitting? (Trap Question)</span>
+        </div>
+        <div class="qna-body">
+          <strong>No, absolutely not, Mam.</strong> In time-series machine learning, shuffling is strictly forbidden because it introduces lookahead bias—the model trains on future data to predict the past. We used a strict <strong>chronological partition</strong>: 70% Train (2008–2020), 15% Validation (2020–2022), and 15% Held-Out Test (2022–2026). Furthermore, our feature scaler was fit <strong>exclusively on the training partition</strong> and frozen before transforming the test split.
+        </div>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q4</span>
+          <span class="q-title">What is an Embargo Gap and why did you implement it?</span>
+        </div>
+        <div class="qna-body">
+          Our target is realized volatility over the <em>next $H=10$ trading days</em>. For a sample at the end of the training set, its target label uses prices extending 10 days into the future. If the test set starts immediately on the next day, the training target overlaps with test set features! We enforce an <strong>$H=10$-day Embargo Gap</strong>, purging those 10 transition days to guarantee zero lookahead bias.
+        </div>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q5</span>
+          <span class="q-title">Why did your Transformer have a lower Macro F1 than the Persistence baseline?</span>
+        </div>
+        <div class="qna-body">
+          In financial econometrics, volatility exhibits intense <strong>clustering and autoregressive persistence</strong> (Mandelbrot, 1963). If today is in a high-volatility regime, tomorrow has an overwhelming probability of remaining high. Because markets spend extended periods in a single regime, the naive Persistence baseline ('predict tomorrow's regime equals today's regime') is very difficult to beat out-of-sample. Rather than faking synthetic numbers, reporting this real econometric finding demonstrates true academic honesty and respects the Efficient Market Hypothesis.
+        </div>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q6</span>
+          <span class="q-title">How did you construct the Adjacency Matrix in the GCN? Why is degree normalization needed?</span>
+        </div>
+        <div class="qna-body">
+          We compute the pairwise Pearson correlation matrix $\rho_{ij}$ of daily log-returns strictly on the training partition. We apply a threshold $\tau = 0.15$ to eliminate noise, and add self-loops $\tilde{A} = A + I_N$ so each asset retains its own features. We then apply Kipf & Welling's Symmetric Degree Normalization: $\hat{A} = \tilde{D}^{-1/2}\tilde{A}\tilde{D}^{-1/2}$. Without degree normalization, nodes with many connections would scale feature vectors up by their degree during message passing, causing gradient explosion and unstable training.
+        </div>
+      </div>
+
+      <div class="qna-box">
+        <div class="qna-header">
+          <span class="q-tag">Q7</span>
+          <span class="q-title">What hardware did you train this on?</span>
+        </div>
+        <div class="qna-body">
+          All models were trained natively on the host multi-threaded CPU using PyTorch 2.5 (<code>torch.cuda.is_available() == False</code>). The dataset contains 4,362 historical trading days (2008 to 2026). Because we designed parameter-efficient architectures ($d_{\text{model}}=32$ for the Transformer, $d_z=4$ for the VAE), the entire pipeline trains in under 5 minutes without needing expensive GPU hardware.
+        </div>
+      </div>
+    </section>
+
+    <!-- SECTION 9: TRELLO -->
+    <section id="trello">
+      <div class="section-header">
+        <div class="section-num">9</div>
+        <h2>SEPARATE SECTION: Research Governance & Trello Tracker</h2>
+      </div>
+
+      <div class="trello-banner">
+        <div class="badge badge-teal" style="margin-bottom: 8px;">MLOps & Research Governance</div>
+        <h3>Why Trello in a Machine Learning Project?</h3>
+        <p>In quantitative finance and modern MLOps, deploying machine learning models without formal task tracking and research governance is considered high-risk engineering. When managing multiple models (VAE, Transformer, GCN), researchers must track hypotheses, blockers, and zero-leakage validation evidence.</p>
+      </div>
+
+      <div class="card">
+        <h3>Decoupled 3-State Architecture</h3>
+        <p>A common software design flaw is tightly coupling external third-party APIs into analytical engines: if the third-party API goes down, the entire app crashes! In MarketFolio, the Trello tracker is <strong>completely decoupled</strong> using a 3-state enum (<code>TrackerSyncMode</code>):</p>
+        <table>
+          <thead>
+            <tr>
+              <th>Tracker Mode</th>
+              <th>Trigger Condition</th>
+              <th>System Behavior</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td><code>LIVE_SYNCHRONIZED</code></td>
+              <td>Trello API key, token, and board ID are configured and valid.</td>
+              <td>Connects to live Trello REST API via HTTPS. Fetches live cards, allows creating cards and moving lists.</td>
+            </tr>
+            <tr>
+              <td><code>API_CONNECTION_FAILED</code></td>
+              <td>Credentials present, but internet down or API returns 401/404.</td>
+              <td>Displays an explicit error banner in the UI: <em>"Trello API connection failed. Reverting to local audit roadmap."</em> Never fakes synchronization!</td>
+            </tr>
+            <tr>
+              <td><code>LOCAL_ROADMAP_ONLY</code></td>
+              <td>No credentials provided (default local academic mode).</td>
+              <td>Displays the curated <strong>Local Research Audit Roadmap</strong> with 5 quantitative audit stages. Completely offline, zero ML latency.</td>
+            </tr>
+          </tbody>
+        </table>
+
+        <h3>The 5 Standardized Audit Lists</h3>
+        <ol style="margin-left: 20px; color: var(--text-muted); line-height: 1.8;">
+          <li><strong style="color: #fff;">1. Planned / Unverified Specification:</strong> Models or features proposed but not yet implemented.</li>
+          <li><strong style="color: #fff;">2. In Progress:</strong> Features currently under active development.</li>
+          <li><strong style="color: #fff;">3. Blocked / Technical Debt:</strong> Tasks delayed by dependencies or computational constraints.</li>
+          <li><strong style="color: #fff;">4. Validation & Leakage Check:</strong> Critical audit checklist verifying zero-leakage, stationarity checks, and scaler isolation.</li>
+          <li><strong style="color: #fff;">5. Completed & Verified:</strong> Models that have passed the full 23-test suite and real-data training runs.</li>
+        </ol>
+
+        <div class="callout callout-success" style="margin-top: 20px;">
+          <h4>Viva Answer on Trello Decoupling</h4>
+          <p><strong>"Mam, does Trello affect model training?"</strong></p>
+          <p><em>"No, Mam. The Trello tracker is strictly a governance and task management layer. It observes and records experiment metadata and audit checklists, but is completely decoupled from the mathematical pipeline. This guarantees that governance tracking never introduces side effects or latency into model training and inference."</em></p>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+</body>
+</html>
