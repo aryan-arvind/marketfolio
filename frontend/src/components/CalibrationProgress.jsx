@@ -1,42 +1,43 @@
 import React from 'react';
 import { CheckCircle2, RefreshCw, Clock, Terminal, Activity, Layers, ShieldCheck, TrendingUp } from 'lucide-react';
 
-const STEPS = [
+const getSteps = (asset) => [
   {
     step: '1/5',
-    title: 'Zero-Leakage Ingestion & Macro Alignment',
-    subtitle: 'Synchronizing NSE India (RELIANCE, NIFTY 50, India VIX) with Global Benchmarks (S&P 500, Brent, USD/INR)',
+    title: 'Data Ingestion & Macro Alignment',
+    subtitle: `Synchronizing ${asset || 'Target Asset'} with NIFTY 50 and global macro indicators (S&P 500, Brent, USD/INR)`,
     icon: Layers,
   },
   {
     step: '2/5',
-    title: 'Stationarity & Multivariate Feature Matrix',
-    subtitle: 'Log returns, joint ADF & KPSS unit-root testing, Parkinson volatility, MACD & RSI indicators',
+    title: 'Stationarity & Feature Processing',
+    subtitle: 'Computing log returns, ADF/KPSS unit-root verification, and rolling volatility indicators',
     icon: Activity,
   },
   {
     step: '3/5',
-    title: 'Deep Anomaly Engine (TimeSeriesVAE)',
-    subtitle: 'Generative latent space modeling, Reparameterization Trick, ELBO loss, and train-only P95 thresholding',
+    title: 'Tail-Risk Anomaly Detection (VAE)',
+    subtitle: 'Optimizing latent space under ELBO loss to calibrate the 95th-percentile anomaly threshold',
     icon: TrendingUp,
   },
   {
     step: '4/5',
     title: 'Volatility Regime Transformer',
-    subtitle: 'Multi-Head Self-Attention sequence modeling, H=10 day embargo gap, 3-class regime classification',
+    subtitle: 'Self-attention sequence modeling with an H=10 day embargo gap to classify volatility regimes',
     icon: ShieldCheck,
   },
   {
     step: '5/5',
-    title: 'Inter-Market Relational Graph (GCN)',
-    subtitle: 'Kipf & Welling degree-normalized spectral convolutions, 6-node contagion graph, systemic stress prediction',
+    title: 'Cross-Market Contagion (GCN)',
+    subtitle: 'Constructing normalized correlation graph to identify systemic stress propagation across assets',
     icon: Terminal,
   },
 ];
 
 export default function CalibrationProgress({ assetInput, elapsedSeconds, stepIndex }) {
-  const currentStep = Math.min(stepIndex, STEPS.length - 1);
-  const progressPct = Math.min(96, Math.max(12, (currentStep / (STEPS.length - 1)) * 90 + Math.min(10, elapsedSeconds * 0.4)));
+  const steps = getSteps(assetInput);
+  const currentStep = Math.min(stepIndex, steps.length - 1);
+  const progressPct = Math.min(96, Math.max(12, (currentStep / (steps.length - 1)) * 90 + Math.min(10, elapsedSeconds * 0.4)));
 
   return (
     <div className="flex-1 flex items-center justify-center p-4 select-none">
@@ -54,7 +55,7 @@ export default function CalibrationProgress({ assetInput, elapsedSeconds, stepIn
               <div className="text-sm font-bold text-white font-mono tracking-tight flex items-center gap-2">
                 <span>Calibrating Advanced ML Pipeline (ATML)</span>
                 <span className="text-xs px-1.5 py-0.2 rounded bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/20">
-                  {STEPS[currentStep].step}
+                  {steps[currentStep].step}
                 </span>
               </div>
               <div className="text-[11px] text-[#94a3b8]">
@@ -79,7 +80,7 @@ export default function CalibrationProgress({ assetInput, elapsedSeconds, stepIn
 
         {/* 5 Distinct Live Steps Checklist */}
         <div className="space-y-2.5">
-          {STEPS.map((s, idx) => {
+          {steps.map((s, idx) => {
             const isCompleted = idx < currentStep;
             const isCurrent = idx === currentStep;
             const isPending = idx > currentStep;
