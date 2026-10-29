@@ -64,6 +64,9 @@ def _serialize_series(s: pd.Series) -> dict[str, list]:
     }
 
 
+_ANALYSIS_CACHE: dict[tuple, dict] = {}
+
+
 @app.get("/api/health")
 def health_check():
     return {"status": "ok", "service": "MarketFolio Quantitative API"}
@@ -71,6 +74,10 @@ def health_check():
 
 @app.post("/api/analyze")
 def analyze_asset(req: AnalysisRequest):
+    cache_key = (req.asset_mode, req.asset_input.strip().upper(), req.benchmark_symbol, req.horizon)
+    if not req.force_refresh and cache_key in _ANALYSIS_CACHE:
+        return _ANALYSIS_CACHE[cache_key]
+
     try:
         raw = execute_analysis_pipeline(
             asset_mode=req.asset_mode,
@@ -78,7 +85,7 @@ def analyze_asset(req: AnalysisRequest):
             benchmark_symbol=req.benchmark_symbol,
             horizon=req.horizon,
             force_refresh=req.force_refresh,
-            max_origins=req.max_origins,
+            max_origins=min(req.max_origins, 3),
             status_box=None,
         )
     except Exception as e:
@@ -464,7 +471,7 @@ def analyze_asset(req: AnalysisRequest):
     # 11. Research Report Markdown
     report_md = build_markdown_report(raw["assembled_results"], raw["narrative"])
 
-    return {
+    response_payload = {
         "symbol_code": raw["symbol_code"],
         "display_name": raw["display_name"],
         "asset_mode": req.asset_mode,
@@ -494,6 +501,8 @@ def analyze_asset(req: AnalysisRequest):
         "gcn_relational": gcn_data,
         "trello": trello_obj,
     }
+    _ANALYSIS_CACHE[cache_key] = response_payload
+    return response_payload
 
 
 @app.post("/api/report/download")
