@@ -4,32 +4,32 @@ import { CheckCircle2, RefreshCw, Clock, Terminal, Activity, Layers, ShieldCheck
 const STEPS = [
   {
     step: '1/5',
-    title: 'Data Ingestion & Anomaly Cleaning',
-    subtitle: 'NSE trading calendar alignment, dividend normalization & jump filter (|r| > 3σ)',
+    title: 'Zero-Leakage Ingestion & Macro Alignment',
+    subtitle: 'Synchronizing NSE India (RELIANCE, NIFTY 50, India VIX) with Global Benchmarks (S&P 500, Brent, USD/INR)',
     icon: Layers,
   },
   {
     step: '2/5',
-    title: 'Stationarity & Econometric Diagnostics',
-    subtitle: 'ADF & KPSS dual unit root testing, Ljung-Box Q-test, STL Loess trend/seasonal decomposition',
+    title: 'Stationarity & Multivariate Feature Matrix',
+    subtitle: 'Log returns, joint ADF & KPSS unit-root testing, Parkinson volatility, MACD & RSI indicators',
     icon: Activity,
   },
   {
     step: '3/5',
-    title: 'GARCH Volatility Modeling & Bootstrap Cone',
-    subtitle: 'GARCH(1,1) conditional variance fitting, 500-path empirical residual bootstrap simulation',
+    title: 'Deep Anomaly Engine (TimeSeriesVAE)',
+    subtitle: 'Generative latent space modeling, Reparameterization Trick, ELBO loss, and train-only P95 thresholding',
     icon: TrendingUp,
   },
   {
     step: '4/5',
-    title: 'Benchmark Sensitivity & Macro VAR System',
-    subtitle: 'ARMA-error regression vs ^NSEI, Vector Autoregression (VAR) & Granger causality',
+    title: 'Volatility Regime Transformer',
+    subtitle: 'Multi-Head Self-Attention sequence modeling, H=10 day embargo gap, 3-class regime classification',
     icon: ShieldCheck,
   },
   {
     step: '5/5',
-    title: 'Rolling-Origin Out-of-Sample Backtesting',
-    subtitle: 'Expanding-window forecast evaluation across multiple origins & MASE metric vs naive baseline',
+    title: 'Inter-Market Relational Graph (GCN)',
+    subtitle: 'Kipf & Welling degree-normalized spectral convolutions, 6-node contagion graph, systemic stress prediction',
     icon: Terminal,
   },
 ];
@@ -52,7 +52,7 @@ export default function CalibrationProgress({ assetInput, elapsedSeconds, stepIn
             </div>
             <div>
               <div className="text-sm font-bold text-white font-mono tracking-tight flex items-center gap-2">
-                <span>Calibrating Econometric Pipeline</span>
+                <span>Calibrating Advanced ML Pipeline (ATML)</span>
                 <span className="text-xs px-1.5 py-0.2 rounded bg-[#06b6d4]/10 text-[#06b6d4] border border-[#06b6d4]/20">
                   {STEPS[currentStep].step}
                 </span>
@@ -145,8 +145,8 @@ export default function CalibrationProgress({ assetInput, elapsedSeconds, stepIn
 
         {/* Footer Note */}
         <div className="mt-4 pt-3 border-t border-[#1e222d] flex items-center justify-between text-[11px] text-[#64748b] font-mono">
-          <span>ATSA Econometric Engine (statsmodels + arch)</span>
-          <span>Zero Look-Ahead Bias Enforced</span>
+          <span>MarketFolio ATML Engine (PyTorch + Econometric Baselines)</span>
+          <span>Zero Look-Ahead Bias & H=10 Embargo Enforced</span>
         </div>
       </div>
     </div>
