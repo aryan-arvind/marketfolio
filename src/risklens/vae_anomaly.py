@@ -252,6 +252,19 @@ def train_and_evaluate_vae_anomaly(
     iso = IsolationForest(contamination=0.05, random_state=ML_RANDOM_SEED)
     iso.fit(splits.X_train_scaled)
 
+    # Batch evaluate Isolation Forest across splits instantaneously
+    iso_tr_flags = (iso.predict(splits.X_train_scaled) == -1)
+    iso_val_flags = (iso.predict(splits.X_val_scaled) == -1)
+    iso_te_flags = (iso.predict(splits.X_test_scaled) == -1)
+
+    iso_dict: dict[Any, bool] = {}
+    for dt_item, flag in zip(splits.train_dates, iso_tr_flags):
+        iso_dict[dt_item] = bool(flag)
+    for dt_item, flag in zip(splits.val_dates, iso_val_flags):
+        iso_dict[dt_item] = bool(flag)
+    for dt_item, flag in zip(splits.test_dates, iso_te_flags):
+        iso_dict[dt_item] = bool(flag)
+
     # 6. Assemble Full Timeline across Splits
     # End dates for each window
     tr_dates = splits.train_dates[idx_tr]
@@ -271,18 +284,7 @@ def train_and_evaluate_vae_anomaly(
         p_val = float(price_series.get(dt, np.nan))
         r_val = float(return_series.get(dt, 0.0))
         z_val = float(z_scores.get(dt, 0.0))
-
-        # Isolation forest evaluation on tabular vector for that date
-        iso_pred = False
-        if dt in splits.X_test_raw.index:
-            row_scaled = splits.scaler.transform(splits.X_test_raw.loc[[dt]].values)
-            iso_pred = bool(iso.predict(row_scaled)[0] == -1)
-        elif dt in splits.X_val_raw.index:
-            row_scaled = splits.scaler.transform(splits.X_val_raw.loc[[dt]].values)
-            iso_pred = bool(iso.predict(row_scaled)[0] == -1)
-        elif dt in splits.X_train_raw.index:
-            row_scaled = splits.scaler.transform(splits.X_train_raw.loc[[dt]].values)
-            iso_pred = bool(iso.predict(row_scaled)[0] == -1)
+        iso_pred = iso_dict.get(dt, False)
 
         is_vae_anomaly = bool(err > threshold)
         is_zscore_anomaly = bool(z_val > 3.0)
